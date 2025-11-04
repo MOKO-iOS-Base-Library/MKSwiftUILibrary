@@ -3,7 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "MKSwiftUILibrary",
-    platforms: [.iOS(.v14)],
+    platforms: [.iOS(.v15)],
     products: [
         .library(
             name: "MKSwiftUILibrary",
@@ -12,7 +12,7 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .package(url: "https://github.com/MOKO-iOS-Base-Library/MKBaseSwiftModule.git", from: "1.0.14"),
+        .package(url: "https://github.com/MOKO-iOS-Base-Library/MKBaseSwiftModule.git", from: "1.0.15"),
     ],
     targets: [
         .target(
@@ -24,7 +24,7 @@ let package = Package(
             resources: [.process("Assets")],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug)),
-                .define("IOS14_OR_LATER"),
+                .define("IOS15_OR_LATER"),
             ],
             linkerSettings: [
                 .linkedLibrary("z"),
