@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-
 import MKBaseSwiftModule
 
 // MARK: - SwiftUI Slider Data Model
