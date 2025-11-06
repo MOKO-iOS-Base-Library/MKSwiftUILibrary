@@ -10,7 +10,7 @@ import SwiftUI
 import MKBaseSwiftModule
 
 // 定义统一的导航栏样式
-struct MKSFUNavBarStyle: ViewModifier {
+public struct MKSFUNavBarStyle: ViewModifier {
     let title: String
     let titleFont: Font
     let showBackButton: Bool
@@ -37,7 +37,7 @@ struct MKSFUNavBarStyle: ViewModifier {
         self.onSave = onSave
     }
     
-    func body(content: Content) -> some View {
+    public func body(content: Content) -> some View {
         content
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -95,7 +95,7 @@ struct MKSFUNavBarStyle: ViewModifier {
 }
 
 // 使用扩展方便调用
-extension View {
+public extension View {
     func withNavBar(
         title: String,
         titleFont: Font = .headline,

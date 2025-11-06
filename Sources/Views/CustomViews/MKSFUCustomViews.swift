@@ -9,7 +9,7 @@ import SwiftUI
 
 import MKBaseSwiftModule
 
-struct MKSFURoundBtn: View {
+public struct MKSFURoundBtn: View {
     let title: String
     let action: () ->Void
     let fontSize: CGFloat
@@ -18,7 +18,7 @@ struct MKSFURoundBtn: View {
         self.action = action
         self.fontSize = fontSize
     }
-    var body: some View {
+    public var body: some View {
         Button(action: action) {
             Text(title)
                 .font(.system(size: fontSize))
@@ -32,14 +32,14 @@ struct MKSFURoundBtn: View {
     }
 }
 
-struct MKSFUNormalText: View {
+public struct MKSFUNormalText: View {
     let text: String
     let fontSize: CGFloat
     init(text: String = "", fontSize: CGFloat = 15) {
         self.text = text
         self.fontSize = fontSize
     }
-    var body: some View {
+    public var body: some View {
         Text(text)
             .font(.system(size: fontSize))
             .foregroundStyle(Color(MKColor.defaultText))

@@ -34,7 +34,7 @@ public class MKSFUTextSwitchCellModel: ObservableObject, Identifiable {
 }
 
 // MARK: - Settings Manager (修复数组问题)
-class SettingsManager: ObservableObject {
+public class SettingsManager: ObservableObject {
     @Published var settings: [MKSFUTextSwitchCellModel] = []
 }
 
