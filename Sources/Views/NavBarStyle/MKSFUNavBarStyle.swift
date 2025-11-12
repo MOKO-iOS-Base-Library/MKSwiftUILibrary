@@ -261,27 +261,34 @@ public struct MKSFURootNavBarStyle: ViewModifier {
     }
 }
 
-// 专门用于 TabBar 中 SwiftUI 页面的导航栏样式
+// 专门用于 TabBar 中 SwiftUI 页面的导航栏样式（支持返回按钮）
 public struct MKSFUTabBarRootNavBarStyle: ViewModifier {
     let title: String
     let titleFont: Font
+    let showBackButton: Bool
     let showRightButton: Bool
     let rightButtonIcon: String?
+    let onBack: (() -> Void)?
     let onRightButton: (() -> Void)?
     
+    @Environment(\.presentationMode) var presentationMode
     @State private var isFirstAppear = true
     
     public init(
         title: String,
         titleFont: Font = .headline,
+        showBackButton: Bool = false,
         showRightButton: Bool = false,
         rightButtonIcon: String? = nil,
+        onBack: (() -> Void)? = nil,
         onRightButton: (() -> Void)? = nil
     ) {
         self.title = title
         self.titleFont = titleFont
+        self.showBackButton = showBackButton
         self.showRightButton = showRightButton
         self.rightButtonIcon = rightButtonIcon
+        self.onBack = onBack
         self.onRightButton = onRightButton
     }
     
@@ -295,6 +302,33 @@ public struct MKSFUTabBarRootNavBarStyle: ViewModifier {
                         .font(titleFont)
                         .foregroundColor(.white)
                         .bold()
+                }
+                
+                // 返回按钮
+                ToolbarItem(placement: .navigationBarLeading) {
+                    if showBackButton {
+                        Button(action: {
+                            // 执行自定义返回操作，如果没有提供则使用默认 dismiss
+                            if let onBack = onBack {
+                                onBack()
+                            } else {
+                                presentationMode.wrappedValue.dismiss()
+                            }
+                        }) {
+                            HStack(spacing: 4) {
+                                if let backImage = UIImage(named: "mk_swiftUI_back_button_white", in: .module, compatibleWith: nil) {
+                                    Image(uiImage: backImage)
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fit)
+                                        .frame(width: 11, height: 21)
+                                } else {
+                                    Image(systemName: "chevron.left")
+                                        .font(.system(size: 17, weight: .medium))
+                                        .foregroundColor(.white)
+                                }
+                            }
+                        }
+                    }
                 }
                 
                 // 右侧按钮
@@ -317,6 +351,7 @@ public struct MKSFUTabBarRootNavBarStyle: ViewModifier {
                     }
                 }
             }
+            .navigationBarBackButtonHidden(true)
             .onAppear {
                 // TabBar 中的 SwiftUI 页面需要特殊处理
                 if isFirstAppear {
@@ -422,15 +457,19 @@ public extension View {
     func withTabBarRootNavBar(
         title: String,
         titleFont: Font = .headline,
+        showBackButton: Bool = false,
         showRightButton: Bool = false,
         rightButtonIcon: String? = nil,
+        onBack: (() -> Void)? = nil,
         onRightButton: (() -> Void)? = nil
     ) -> some View {
         self.modifier(MKSFUTabBarRootNavBarStyle(
             title: title,
             titleFont: titleFont,
+            showBackButton: showBackButton,
             showRightButton: showRightButton,
             rightButtonIcon: rightButtonIcon,
+            onBack: onBack,
             onRightButton: onRightButton
         ))
     }
