@@ -8,18 +8,18 @@
 import SwiftUI
 import MKBaseSwiftModule
 
-// 定义统一的导航栏样式
+// 专门为 SwiftUI 在 TabBar 中的导航栏样式
 public struct MKSFUNavBarStyle: ViewModifier {
     let title: String
     let titleFont: Font
     let showBackButton: Bool
     let showRightButton: Bool
     let rightButtonIcon: String?
-    let backgroundColor: Color
     let onBack: (() -> Void)?
     let onRightButton: (() -> Void)?
     
     @Environment(\.presentationMode) var presentationMode
+    @State private var isFirstAppear = true
     
     public init(
         title: String,
@@ -27,7 +27,6 @@ public struct MKSFUNavBarStyle: ViewModifier {
         showBackButton: Bool = true,
         showRightButton: Bool = false,
         rightButtonIcon: String? = nil,
-        backgroundColor: Color = Color(MKColor.navBar),
         onBack: (() -> Void)? = nil,
         onRightButton: (() -> Void)? = nil
     ) {
@@ -36,7 +35,6 @@ public struct MKSFUNavBarStyle: ViewModifier {
         self.showBackButton = showBackButton
         self.showRightButton = showRightButton
         self.rightButtonIcon = rightButtonIcon
-        self.backgroundColor = backgroundColor
         self.onBack = onBack
         self.onRightButton = onRightButton
     }
@@ -99,51 +97,85 @@ public struct MKSFUNavBarStyle: ViewModifier {
             }
             .navigationBarBackButtonHidden(true)
             .onAppear {
-                setupNavigationBarAppearance()
+                // SwiftUI 导航栏第一次显示时需要强制刷新
+                if isFirstAppear {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                        forceNavigationBarRefresh()
+                    }
+                    isFirstAppear = false
+                }
             }
     }
     
-    private func setupNavigationBarAppearance() {
-        let appearance = UINavigationBarAppearance()
-        appearance.configureWithOpaqueBackground()
-        appearance.backgroundColor = UIColor(backgroundColor)
-        appearance.titleTextAttributes = [
-            .foregroundColor: UIColor.white,
-            .font: UIFont.boldSystemFont(ofSize: 18)
-        ]
+    private func forceNavigationBarRefresh() {
+        // 找到当前活跃的导航控制器并强制刷新
+        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+              let window = windowScene.windows.first,
+              let rootViewController = window.rootViewController else { return }
         
-        // 设置按钮样式
-        appearance.buttonAppearance.normal.titleTextAttributes = [.foregroundColor: UIColor.white]
+        // 递归查找当前显示的导航控制器
+        if let navController = findCurrentNavigationController(from: rootViewController) {
+            // 强制导航栏重新应用样式
+            navController.navigationBar.setNeedsLayout()
+            navController.navigationBar.layoutIfNeeded()
+            
+            // 确保导航栏不透明
+            navController.navigationBar.isTranslucent = false
+        }
+    }
+    
+    private func findCurrentNavigationController(from viewController: UIViewController) -> UINavigationController? {
+        // 如果是导航控制器且正在显示
+        if let navController = viewController as? UINavigationController,
+           navController.viewIfLoaded?.window != nil {
+            return navController
+        }
         
-        UINavigationBar.appearance().standardAppearance = appearance
-        UINavigationBar.appearance().scrollEdgeAppearance = appearance
-        UINavigationBar.appearance().compactAppearance = appearance
-        UINavigationBar.appearance().tintColor = .white
+        // 检查当前显示的子控制器
+        if let presentedVC = viewController.presentedViewController {
+            if let navController = findCurrentNavigationController(from: presentedVC) {
+                return navController
+            }
+        }
+        
+        // 检查子控制器
+        for child in viewController.children {
+            if let navController = findCurrentNavigationController(from: child) {
+                return navController
+            }
+        }
+        
+        // 如果是 TabBarController，检查选中的控制器
+        if let tabBarController = viewController as? UITabBarController,
+           let selectedVC = tabBarController.selectedViewController {
+            return findCurrentNavigationController(from: selectedVC)
+        }
+        
+        return nil
     }
 }
 
-// 专门用于根页面的导航栏样式（没有返回按钮）
+// 专门用于 TabBar 中 SwiftUI 根页面的导航栏样式
 public struct MKSFURootNavBarStyle: ViewModifier {
     let title: String
     let titleFont: Font
     let showRightButton: Bool
     let rightButtonIcon: String?
-    let backgroundColor: Color
     let onRightButton: (() -> Void)?
+    
+    @State private var isFirstAppear = true
     
     public init(
         title: String,
         titleFont: Font = .headline,
         showRightButton: Bool = false,
         rightButtonIcon: String? = nil,
-        backgroundColor: Color = Color(MKColor.navBar),
         onRightButton: (() -> Void)? = nil
     ) {
         self.title = title
         self.titleFont = titleFont
         self.showRightButton = showRightButton
         self.rightButtonIcon = rightButtonIcon
-        self.backgroundColor = backgroundColor
         self.onRightButton = onRightButton
     }
     
@@ -180,23 +212,52 @@ public struct MKSFURootNavBarStyle: ViewModifier {
                 }
             }
             .onAppear {
-                setupNavigationBarAppearance()
+                // SwiftUI 导航栏第一次显示时需要强制刷新
+                if isFirstAppear {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                        forceNavigationBarRefresh()
+                    }
+                    isFirstAppear = false
+                }
             }
     }
     
-    private func setupNavigationBarAppearance() {
-        let appearance = UINavigationBarAppearance()
-        appearance.configureWithOpaqueBackground()
-        appearance.backgroundColor = UIColor(backgroundColor)
-        appearance.titleTextAttributes = [
-            .foregroundColor: UIColor.white,
-            .font: UIFont.boldSystemFont(ofSize: 18)
-        ]
+    private func forceNavigationBarRefresh() {
+        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+              let window = windowScene.windows.first,
+              let rootViewController = window.rootViewController else { return }
         
-        UINavigationBar.appearance().standardAppearance = appearance
-        UINavigationBar.appearance().scrollEdgeAppearance = appearance
-        UINavigationBar.appearance().compactAppearance = appearance
-        UINavigationBar.appearance().tintColor = .white
+        if let navController = findCurrentNavigationController(from: rootViewController) {
+            navController.navigationBar.setNeedsLayout()
+            navController.navigationBar.layoutIfNeeded()
+            navController.navigationBar.isTranslucent = false
+        }
+    }
+    
+    private func findCurrentNavigationController(from viewController: UIViewController) -> UINavigationController? {
+        if let navController = viewController as? UINavigationController,
+           navController.viewIfLoaded?.window != nil {
+            return navController
+        }
+        
+        if let presentedVC = viewController.presentedViewController {
+            if let navController = findCurrentNavigationController(from: presentedVC) {
+                return navController
+            }
+        }
+        
+        for child in viewController.children {
+            if let navController = findCurrentNavigationController(from: child) {
+                return navController
+            }
+        }
+        
+        if let tabBarController = viewController as? UITabBarController,
+           let selectedVC = tabBarController.selectedViewController {
+            return findCurrentNavigationController(from: selectedVC)
+        }
+        
+        return nil
     }
 }
 
@@ -208,7 +269,6 @@ public extension View {
         showBackButton: Bool = true,
         showRightButton: Bool = false,
         rightButtonIcon: String? = nil,
-        backgroundColor: Color = Color(MKColor.navBar),
         onBack: (() -> Void)? = nil,
         onRightButton: (() -> Void)? = nil
     ) -> some View {
@@ -218,7 +278,6 @@ public extension View {
             showBackButton: showBackButton,
             showRightButton: showRightButton,
             rightButtonIcon: rightButtonIcon,
-            backgroundColor: backgroundColor,
             onBack: onBack,
             onRightButton: onRightButton
         ))
@@ -229,7 +288,6 @@ public extension View {
         titleFont: Font = .headline,
         showRightButton: Bool = false,
         rightButtonIcon: String? = nil,
-        backgroundColor: Color = Color(MKColor.navBar),
         onRightButton: (() -> Void)? = nil
     ) -> some View {
         self.modifier(MKSFURootNavBarStyle(
@@ -237,7 +295,6 @@ public extension View {
             titleFont: titleFont,
             showRightButton: showRightButton,
             rightButtonIcon: rightButtonIcon,
-            backgroundColor: backgroundColor,
             onRightButton: onRightButton
         ))
     }
