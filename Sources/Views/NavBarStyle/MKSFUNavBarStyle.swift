@@ -261,6 +261,126 @@ public struct MKSFURootNavBarStyle: ViewModifier {
     }
 }
 
+// 专门用于 TabBar 中 SwiftUI 页面的导航栏样式
+public struct MKSFUTabBarRootNavBarStyle: ViewModifier {
+    let title: String
+    let titleFont: Font
+    let showRightButton: Bool
+    let rightButtonIcon: String?
+    let onRightButton: (() -> Void)?
+    
+    @State private var isFirstAppear = true
+    
+    public init(
+        title: String,
+        titleFont: Font = .headline,
+        showRightButton: Bool = false,
+        rightButtonIcon: String? = nil,
+        onRightButton: (() -> Void)? = nil
+    ) {
+        self.title = title
+        self.titleFont = titleFont
+        self.showRightButton = showRightButton
+        self.rightButtonIcon = rightButtonIcon
+        self.onRightButton = onRightButton
+    }
+    
+    public func body(content: Content) -> some View {
+        content
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                // 标题
+                ToolbarItem(placement: .principal) {
+                    Text(title)
+                        .font(titleFont)
+                        .foregroundColor(.white)
+                        .bold()
+                }
+                
+                // 右侧按钮
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    if showRightButton, let iconName = rightButtonIcon {
+                        Button(action: {
+                            onRightButton?()
+                        }) {
+                            if let rightImage = UIImage(named: iconName, in: .module, compatibleWith: nil) {
+                                Image(uiImage: rightImage)
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fit)
+                                    .frame(width: 21, height: 21)
+                            } else {
+                                Image(systemName: "checkmark")
+                                    .foregroundColor(.white)
+                                    .font(.system(size: 17, weight: .medium))
+                            }
+                        }
+                    }
+                }
+            }
+            .onAppear {
+                // TabBar 中的 SwiftUI 页面需要特殊处理
+                if isFirstAppear {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        setupTabBarNavigationBar()
+                    }
+                    isFirstAppear = false
+                }
+            }
+    }
+    
+    private func setupTabBarNavigationBar() {
+        // 找到 TabBar 中的导航控制器
+        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+              let window = windowScene.windows.first,
+              let rootViewController = window.rootViewController else { return }
+        
+        // 查找 TabBarController
+        if let tabBarController = findTabBarController(from: rootViewController) {
+            // 确保当前选中的是设备页面所在的导航控制器
+            if let selectedNavController = tabBarController.selectedViewController as? UINavigationController {
+                // 强制设置导航栏样式
+                let appearance = UINavigationBarAppearance()
+                appearance.configureWithOpaqueBackground()
+                appearance.backgroundColor = UIColor(Color(MKColor.navBar))
+                appearance.titleTextAttributes = [
+                    .foregroundColor: UIColor.white,
+                    .font: UIFont.boldSystemFont(ofSize: 18)
+                ]
+                
+                selectedNavController.navigationBar.standardAppearance = appearance
+                selectedNavController.navigationBar.scrollEdgeAppearance = appearance
+                selectedNavController.navigationBar.compactAppearance = appearance
+                selectedNavController.navigationBar.tintColor = .white
+                selectedNavController.navigationBar.isTranslucent = false
+                
+                // 强制刷新
+                selectedNavController.navigationBar.setNeedsLayout()
+                selectedNavController.navigationBar.layoutIfNeeded()
+            }
+        }
+    }
+    
+    private func findTabBarController(from viewController: UIViewController) -> UITabBarController? {
+        if let tabBarController = viewController as? UITabBarController {
+            return tabBarController
+        }
+        
+        if let presentedVC = viewController.presentedViewController {
+            if let tabBarController = findTabBarController(from: presentedVC) {
+                return tabBarController
+            }
+        }
+        
+        for child in viewController.children {
+            if let tabBarController = findTabBarController(from: child) {
+                return tabBarController
+            }
+        }
+        
+        return nil
+    }
+}
+
 // 使用扩展方便调用
 public extension View {
     func withNavBar(
@@ -291,6 +411,22 @@ public extension View {
         onRightButton: (() -> Void)? = nil
     ) -> some View {
         self.modifier(MKSFURootNavBarStyle(
+            title: title,
+            titleFont: titleFont,
+            showRightButton: showRightButton,
+            rightButtonIcon: rightButtonIcon,
+            onRightButton: onRightButton
+        ))
+    }
+    
+    func withTabBarRootNavBar(
+        title: String,
+        titleFont: Font = .headline,
+        showRightButton: Bool = false,
+        rightButtonIcon: String? = nil,
+        onRightButton: (() -> Void)? = nil
+    ) -> some View {
+        self.modifier(MKSFUTabBarRootNavBarStyle(
             title: title,
             titleFont: titleFont,
             showRightButton: showRightButton,
