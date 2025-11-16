@@ -14,7 +14,7 @@ public struct MKSFUNavBarStyle: ViewModifier {
     let titleFont: Font
     let showBackButton: Bool
     let showRightButton: Bool
-    let rightButtonIcon: String?
+    let rightButtonIcon: UIImage?
     let onBack: (() -> Void)?
     let onRightButton: (() -> Void)?
     
@@ -26,7 +26,7 @@ public struct MKSFUNavBarStyle: ViewModifier {
         titleFont: Font = .headline,
         showBackButton: Bool = true,
         showRightButton: Bool = false,
-        rightButtonIcon: String? = nil,
+        rightButtonIcon: UIImage? = nil,
         onBack: (() -> Void)? = nil,
         onRightButton: (() -> Void)? = nil
     ) {
@@ -77,20 +77,14 @@ public struct MKSFUNavBarStyle: ViewModifier {
                 
                 // 右侧按钮
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    if showRightButton, let iconName = rightButtonIcon {
+                    if showRightButton, let iconImage = rightButtonIcon {
                         Button(action: {
                             onRightButton?()
                         }) {
-                            if let rightImage = UIImage(named: iconName, in: .module, compatibleWith: nil) {
-                                Image(uiImage: rightImage)
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fit)
-                                    .frame(width: 21, height: 21)
-                            } else {
-                                Image(systemName: "checkmark")
-                                    .foregroundColor(.white)
-                                    .font(.system(size: 17, weight: .medium))
-                            }
+                            Image(uiImage: iconImage)
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: 21, height: 21)
                         }
                     }
                 }
@@ -160,7 +154,7 @@ public struct MKSFURootNavBarStyle: ViewModifier {
     let title: String
     let titleFont: Font
     let showRightButton: Bool
-    let rightButtonIcon: String?
+    let rightButtonIcon: UIImage?
     let onRightButton: (() -> Void)?
     
     @State private var isFirstAppear = true
@@ -169,7 +163,7 @@ public struct MKSFURootNavBarStyle: ViewModifier {
         title: String,
         titleFont: Font = .headline,
         showRightButton: Bool = false,
-        rightButtonIcon: String? = nil,
+        rightButtonIcon: UIImage? = nil,
         onRightButton: (() -> Void)? = nil
     ) {
         self.title = title
@@ -193,20 +187,14 @@ public struct MKSFURootNavBarStyle: ViewModifier {
                 
                 // 右侧按钮
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    if showRightButton, let iconName = rightButtonIcon {
+                    if showRightButton, let iconImage = rightButtonIcon {
                         Button(action: {
                             onRightButton?()
                         }) {
-                            if let rightImage = UIImage(named: iconName, in: .module, compatibleWith: nil) {
-                                Image(uiImage: rightImage)
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fit)
-                                    .frame(width: 21, height: 21)
-                            } else {
-                                Image(systemName: "checkmark")
-                                    .foregroundColor(.white)
-                                    .font(.system(size: 17, weight: .medium))
-                            }
+                            Image(uiImage: iconImage)
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: 21, height: 21)
                         }
                     }
                 }
@@ -267,7 +255,7 @@ public struct MKSFUTabBarRootNavBarStyle: ViewModifier {
     let titleFont: Font
     let showBackButton: Bool
     let showRightButton: Bool
-    let rightButtonIcon: String?
+    let rightButtonIcon: UIImage?
     let onBack: (() -> Void)?
     let onRightButton: (() -> Void)?
     
@@ -279,7 +267,7 @@ public struct MKSFUTabBarRootNavBarStyle: ViewModifier {
         titleFont: Font = .headline,
         showBackButton: Bool = false,
         showRightButton: Bool = false,
-        rightButtonIcon: String? = nil,
+        rightButtonIcon: UIImage? = nil,
         onBack: (() -> Void)? = nil,
         onRightButton: (() -> Void)? = nil
     ) {
@@ -333,20 +321,14 @@ public struct MKSFUTabBarRootNavBarStyle: ViewModifier {
                 
                 // 右侧按钮
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    if showRightButton, let iconName = rightButtonIcon {
+                    if showRightButton, let iconImage = rightButtonIcon {
                         Button(action: {
                             onRightButton?()
                         }) {
-                            if let rightImage = UIImage(named: iconName, in: .module, compatibleWith: nil) {
-                                Image(uiImage: rightImage)
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fit)
-                                    .frame(width: 21, height: 21)
-                            } else {
-                                Image(systemName: "checkmark")
-                                    .foregroundColor(.white)
-                                    .font(.system(size: 17, weight: .medium))
-                            }
+                            Image(uiImage: iconImage)
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: 21, height: 21)
                         }
                     }
                 }
@@ -423,7 +405,7 @@ public extension View {
         titleFont: Font = .headline,
         showBackButton: Bool = true,
         showRightButton: Bool = false,
-        rightButtonIcon: String? = nil,
+        rightButtonIcon: UIImage? = nil,
         onBack: (() -> Void)? = nil,
         onRightButton: (() -> Void)? = nil
     ) -> some View {
@@ -442,7 +424,7 @@ public extension View {
         title: String,
         titleFont: Font = .headline,
         showRightButton: Bool = false,
-        rightButtonIcon: String? = nil,
+        rightButtonIcon: UIImage? = nil,
         onRightButton: (() -> Void)? = nil
     ) -> some View {
         self.modifier(MKSFURootNavBarStyle(
@@ -459,7 +441,7 @@ public extension View {
         titleFont: Font = .headline,
         showBackButton: Bool = false,
         showRightButton: Bool = false,
-        rightButtonIcon: String? = nil,
+        rightButtonIcon: UIImage? = nil,
         onBack: (() -> Void)? = nil,
         onRightButton: (() -> Void)? = nil
     ) -> some View {
@@ -492,7 +474,7 @@ struct MKSFUNavBarStyle_Preview: View {
             .withRootNavBar(
                 title: "首页",
                 showRightButton: true,
-                rightButtonIcon: "mk_swiftUI_slotSaveIcon"
+                rightButtonIcon: UIImage(named: "mk_swiftUI_slotSaveIcon", in: .module, compatibleWith: nil)
             )
         }
     }
