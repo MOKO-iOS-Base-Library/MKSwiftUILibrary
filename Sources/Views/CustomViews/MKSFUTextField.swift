@@ -53,6 +53,17 @@ public struct MKSFUTextField: View {
             .autocorrectionDisabled(true)
             .textInputAutocapitalization(.never)
             .foregroundColor(Color(MKColor.defaultText))
+            .toolbar {
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("Done") {
+                        // 隐藏键盘
+                        isFocused = false
+                    }
+                    .foregroundColor(.blue)
+                    .font(.system(size: 16, weight: .medium))
+                }
+            }
             .onChange(of: text) { newValue in
                 handleTextChange(newValue)
             }
