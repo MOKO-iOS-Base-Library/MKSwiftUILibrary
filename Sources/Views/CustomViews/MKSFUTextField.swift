@@ -10,7 +10,7 @@ import Combine
 
 import MKBaseSwiftModule
 
-// MARK: - 输入框类型
+// MARK: - Text Field Type
 public enum MKSFUTextFieldType: Int {
     case normal
     case realNumberOnly
@@ -20,7 +20,7 @@ public enum MKSFUTextFieldType: Int {
     case uuidMode
 }
 
-// MARK: - SwiftUI 文本输入框
+// MARK: - SwiftUI Text Field
 public struct MKSFUTextField: View {
     @Binding private var text: String
     private let placeholder: String
@@ -28,7 +28,7 @@ public struct MKSFUTextField: View {
     private let maxLength: Int
     private let onTextChanged: ((String) -> Void)?
     
-    // 状态管理
+    // State management
     @State private var inputLen: Int = 0
     @FocusState private var isFocused: Bool
     
@@ -53,29 +53,23 @@ public struct MKSFUTextField: View {
             .autocorrectionDisabled(true)
             .textInputAutocapitalization(.never)
             .foregroundColor(Color(MKColor.defaultText))
-            .toolbar {
-                ToolbarItemGroup(placement: .keyboard) {
-                    Spacer()
-                    Button("Done") {
-                        // 隐藏键盘
-                        isFocused = false
-                    }
-                    .foregroundColor(.blue)
-                    .font(.system(size: 16, weight: .medium))
-                }
+            .submitLabel(.done)
+            .onSubmit {
+                // Hide keyboard when Done is pressed
+                isFocused = false
             }
             .onChange(of: text) { newValue in
                 handleTextChange(newValue)
             }
             .onAppear {
-                // 初始文本处理
+                // Initial text processing
                 if !text.isEmpty {
                     handleTextChange(text)
                 }
             }
     }
     
-    // MARK: - 文本变化处理
+    // MARK: - Text Change Handling
     private func handleTextChange(_ newText: String) {
         guard !newText.isEmpty else {
             onTextChanged?("")
@@ -83,14 +77,14 @@ public struct MKSFUTextField: View {
             return
         }
         
-        // 最大长度限制
+        // Max length restriction
         if maxLength > 0 && newText.count > maxLength && textType != .uuidMode {
             text = String(newText.prefix(maxLength))
             onTextChanged?(text)
             return
         }
         
-        // 输入验证
+        // Input validation
         if !newText.isEmpty {
             let lastChar = String(newText.suffix(1))
             if !validation(lastChar) {
@@ -100,7 +94,7 @@ public struct MKSFUTextField: View {
             }
         }
         
-        // UUID 模式特殊处理
+        // UUID mode special handling
         if textType == .uuidMode {
             handleUUIDMode(newText)
         } else {
@@ -108,11 +102,11 @@ public struct MKSFUTextField: View {
         }
     }
     
-    // MARK: - UUID 模式处理
+    // MARK: - UUID Mode Handling
     private func handleUUIDMode(_ newText: String) {
         var processedText = newText.uppercased()
         
-        // 自动插入分隔符
+        // Auto-insert separators
         let positions = [8, 13, 18, 23]
         for position in positions {
             if processedText.count == position && !processedText.hasSuffix("-") {
@@ -120,7 +114,7 @@ public struct MKSFUTextField: View {
             }
         }
         
-        // 移除多余的分隔符（在删除时）
+        // Remove extra separators (when deleting)
         if processedText.count < inputLen {
             let positions = [8, 13, 18, 23]
             if positions.contains(processedText.count) && processedText.hasSuffix("-") {
@@ -128,7 +122,7 @@ public struct MKSFUTextField: View {
             }
         }
         
-        // 长度限制
+        // Length restriction
         if processedText.count > 36 {
             processedText = String(processedText.prefix(36))
         }
@@ -138,7 +132,7 @@ public struct MKSFUTextField: View {
         onTextChanged?(text)
     }
     
-    // MARK: - 输入验证
+    // MARK: - Input Validation
     private func validation(_ inputString: String) -> Bool {
         guard !inputString.isEmpty else { return false }
         
@@ -156,7 +150,7 @@ public struct MKSFUTextField: View {
         }
     }
     
-    // MARK: - 键盘类型
+    // MARK: - Keyboard Type
     private func getKeyboardType() -> UIKeyboardType {
         switch textType {
         case .realNumberOnly:
@@ -167,7 +161,7 @@ public struct MKSFUTextField: View {
     }
 }
 
-// MARK: - 预览
+// MARK: - Preview
 struct MKSFUTextField_Preview: View {
     @State private var normalText = ""
     @State private var numberText = ""
@@ -175,43 +169,43 @@ struct MKSFUTextField_Preview: View {
     
     var body: some View {
         VStack(spacing: 20) {
-            // 普通文本输入
+            // Normal text input
             VStack(alignment: .leading) {
-                Text("普通输入:")
+                Text("Normal Input:")
                     .font(.caption)
                 MKSFUTextField(
                     text: $normalText,
-                    placeholder: "请输入文本",
+                    placeholder: "Enter text",
                     textType: .normal,
                     maxLength: 20
                 ) { newText in
-                    print("普通文本: \(newText)")
+                    print("Normal text: \(newText)")
                 }
                 .textFieldStyle(RoundedBorderTextFieldStyle())
             }
             
-            // 数字输入
+            // Number input
             VStack(alignment: .leading) {
-                Text("数字输入:")
+                Text("Number Input:")
                     .font(.caption)
                 MKSFUTextField(
                     text: $numberText,
-                    placeholder: "请输入数字",
+                    placeholder: "Enter number",
                     textType: .realNumberOnly,
                     maxLength: 10
                 ) { newText in
-                    print("数字: \(newText)")
+                    print("Number: \(newText)")
                 }
                 .textFieldStyle(RoundedBorderTextFieldStyle())
             }
             
-            // UUID 输入
+            // UUID input
             VStack(alignment: .leading) {
-                Text("UUID 输入:")
+                Text("UUID Input:")
                     .font(.caption)
                 MKSFUTextField(
                     text: $uuidText,
-                    placeholder: "请输入 UUID",
+                    placeholder: "Enter UUID",
                     textType: .uuidMode
                 ) { newText in
                     print("UUID: \(newText)")
@@ -229,9 +223,9 @@ struct MKSFUTextField_Preview: View {
     MKSFUTextField_Preview()
 }
 
-// MARK: - 使用示例扩展
+// MARK: - Usage Extension
 extension View {
-    /// 快速创建文本输入框
+    /// Quick creation of text field
     func mkTextField(
         _ text: Binding<String>,
         placeholder: String = "",
