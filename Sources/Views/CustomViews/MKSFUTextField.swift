@@ -20,6 +20,26 @@ public enum MKSFUTextFieldType: Int {
     case uuidMode
 }
 
+// MARK: - 键盘工具栏配置
+public struct MKSFUTextFieldToolbarConfig {
+    public let showToolbar: Bool
+    public let doneButtonTitle: String
+    public let doneButtonColor: Color
+    public let showSpacer: Bool
+    
+    public init(
+        showToolbar: Bool = true,
+        doneButtonTitle: String = "Done",
+        doneButtonColor: Color = Color(MKColor.navBar),
+        showSpacer: Bool = true
+    ) {
+        self.showToolbar = showToolbar
+        self.doneButtonTitle = doneButtonTitle
+        self.doneButtonColor = doneButtonColor
+        self.showSpacer = showSpacer
+    }
+}
+
 // MARK: - SwiftUI Text Field
 public struct MKSFUTextField: View {
     @Binding private var text: String
@@ -27,6 +47,7 @@ public struct MKSFUTextField: View {
     private let textType: MKSFUTextFieldType
     private let maxLength: Int
     private let onTextChanged: ((String) -> Void)?
+    private let toolbarConfig: MKSFUTextFieldToolbarConfig?
     
     // State management
     @State private var inputLen: Int = 0
@@ -37,17 +58,20 @@ public struct MKSFUTextField: View {
         placeholder: String = "",
         textType: MKSFUTextFieldType = .normal,
         maxLength: Int = 0,
-        onTextChanged: ((String) -> Void)? = nil
+        onTextChanged: ((String) -> Void)? = nil,
+        toolbarConfig: MKSFUTextFieldToolbarConfig? = nil
     ) {
         self._text = text
         self.placeholder = placeholder
         self.textType = textType
         self.maxLength = maxLength
         self.onTextChanged = onTextChanged
+        self.toolbarConfig = toolbarConfig
     }
     
     public var body: some View {
-        TextField(placeholder, text: $text)
+        // 基础 TextField
+        let textField = TextField(placeholder, text: $text)
             .focused($isFocused)
             .keyboardType(getKeyboardType())
             .autocorrectionDisabled(true)
@@ -67,6 +91,18 @@ public struct MKSFUTextField: View {
                     handleTextChange(text)
                 }
             }
+        
+        // 根据配置应用键盘工具栏
+        if let config = toolbarConfig, config.showToolbar {
+            textField
+                .smp_addKeyboardDoneButton(
+                    title: config.doneButtonTitle,
+                    color: config.doneButtonColor,
+                    showSpacer: config.showSpacer
+                )
+        } else {
+            textField
+        }
     }
     
     // MARK: - Text Change Handling
@@ -161,61 +197,190 @@ public struct MKSFUTextField: View {
     }
 }
 
+// MARK: - 便捷初始化方法扩展
+public extension MKSFUTextField {
+    /// 便捷初始化方法 - 不显示工具栏
+    static func withoutToolbar(
+        text: Binding<String>,
+        placeholder: String = "",
+        textType: MKSFUTextFieldType = .normal,
+        maxLength: Int = 0,
+        onTextChanged: ((String) -> Void)? = nil
+    ) -> MKSFUTextField {
+        MKSFUTextField(
+            text: text,
+            placeholder: placeholder,
+            textType: textType,
+            maxLength: maxLength,
+            onTextChanged: onTextChanged,
+            toolbarConfig: MKSFUTextFieldToolbarConfig(showToolbar: false)
+        )
+    }
+    
+    /// 便捷初始化方法 - 自定义工具栏
+    static func withCustomToolbar(
+        text: Binding<String>,
+        placeholder: String = "",
+        textType: MKSFUTextFieldType = .normal,
+        maxLength: Int = 0,
+        toolbarTitle: String = "Done",
+        toolbarColor: Color = Color(MKColor.navBar),
+        onTextChanged: ((String) -> Void)? = nil
+    ) -> MKSFUTextField {
+        MKSFUTextField(
+            text: text,
+            placeholder: placeholder,
+            textType: textType,
+            maxLength: maxLength,
+            onTextChanged: onTextChanged,
+            toolbarConfig: MKSFUTextFieldToolbarConfig(
+                showToolbar: true,
+                doneButtonTitle: toolbarTitle,
+                doneButtonColor: toolbarColor
+            )
+        )
+    }
+    
+    /// 便捷初始化方法 - 带默认工具栏
+    static func withDefaultToolbar(
+        text: Binding<String>,
+        placeholder: String = "",
+        textType: MKSFUTextFieldType = .normal,
+        maxLength: Int = 0,
+        onTextChanged: ((String) -> Void)? = nil
+    ) -> MKSFUTextField {
+        MKSFUTextField(
+            text: text,
+            placeholder: placeholder,
+            textType: textType,
+            maxLength: maxLength,
+            onTextChanged: onTextChanged,
+            toolbarConfig: MKSFUTextFieldToolbarConfig(showToolbar: true)
+        )
+    }
+}
+
 // MARK: - Preview
 struct MKSFUTextField_Preview: View {
     @State private var normalText = ""
     @State private var numberText = ""
     @State private var uuidText = ""
+    @State private var customToolbarText = ""
+    @State private var noToolbarText = ""
     
     var body: some View {
-        VStack(spacing: 20) {
-            // Normal text input
-            VStack(alignment: .leading) {
-                Text("Normal Input:")
-                    .font(.caption)
-                MKSFUTextField(
-                    text: $normalText,
-                    placeholder: "Enter text",
-                    textType: .normal,
-                    maxLength: 20
-                ) { newText in
-                    print("Normal text: \(newText)")
+        NavigationView {
+            VStack(spacing: 20) {
+                // 默认工具栏示例
+                VStack(alignment: .leading) {
+                    Text("Default Toolbar (默认工具栏):")
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                    MKSFUTextField.withDefaultToolbar(
+                        text: $normalText,
+                        placeholder: "Enter text with default toolbar",
+                        textType: .normal,
+                        maxLength: 20,
+                        onTextChanged: { newText in
+                            print("Normal text: \(newText)")
+                        }
+                    )
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
                 }
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-            }
-            
-            // Number input
-            VStack(alignment: .leading) {
-                Text("Number Input:")
-                    .font(.caption)
-                MKSFUTextField(
-                    text: $numberText,
-                    placeholder: "Enter number",
-                    textType: .realNumberOnly,
-                    maxLength: 10
-                ) { newText in
-                    print("Number: \(newText)")
+                
+                // 数字输入带自定义工具栏
+                VStack(alignment: .leading) {
+                    Text("Number Input (自定义工具栏):")
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                    MKSFUTextField.withCustomToolbar(
+                        text: $numberText,
+                        placeholder: "Enter number",
+                        textType: .realNumberOnly,
+                        maxLength: 10,
+                        toolbarTitle: "Close",
+                        toolbarColor: .red,
+                        onTextChanged: { newText in
+                            print("Number: \(newText)")
+                        }
+                    )
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
                 }
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-            }
-            
-            // UUID input
-            VStack(alignment: .leading) {
-                Text("UUID Input:")
-                    .font(.caption)
-                MKSFUTextField(
-                    text: $uuidText,
-                    placeholder: "Enter UUID",
-                    textType: .uuidMode
-                ) { newText in
-                    print("UUID: \(newText)")
+                
+                // UUID 输入带默认工具栏
+                VStack(alignment: .leading) {
+                    Text("UUID Input (默认工具栏):")
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                    MKSFUTextField.withDefaultToolbar(
+                        text: $uuidText,
+                        placeholder: "Enter UUID",
+                        textType: .uuidMode,
+                        onTextChanged: { newText in
+                            print("UUID: \(newText)")
+                        }
+                    )
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
                 }
-                .textFieldStyle(RoundedBorderTextFieldStyle())
+                
+                // 自定义工具栏示例 - 修复后的调用方式
+                VStack(alignment: .leading) {
+                    Text("Custom Toolbar (完全自定义):")
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                    MKSFUTextField(
+                        text: $customToolbarText,
+                        placeholder: "Custom toolbar configuration",
+                        textType: .normal,
+                        maxLength: 0,
+                        onTextChanged: { newText in
+                            print("Custom toolbar text: \(newText)")
+                        },
+                        toolbarConfig: MKSFUTextFieldToolbarConfig(
+                            showToolbar: true,
+                            doneButtonTitle: "Confirm",
+                            doneButtonColor: .green,
+                            showSpacer: true
+                        )
+                    )
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                }
+                
+                // 无工具栏示例
+                VStack(alignment: .leading) {
+                    Text("Without Toolbar (无工具栏):")
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                    MKSFUTextField.withoutToolbar(
+                        text: $noToolbarText,
+                        placeholder: "No toolbar input field",
+                        textType: .normal,
+                        onTextChanged: { newText in
+                            print("No toolbar text: \(newText)")
+                        }
+                    )
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                }
+                
+                Spacer()
+                
+                // 说明文本
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("说明:")
+                        .font(.headline)
+                    Text("• 点击输入框查看键盘工具栏效果")
+                    Text("• 不同输入类型自动适配不同键盘")
+                    Text("• 工具栏按钮点击后可隐藏键盘")
+                }
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .padding()
+                .background(Color.gray.opacity(0.1))
+                .cornerRadius(8)
             }
-            
-            Spacer()
+            .padding()
+            .navigationTitle("MKSFUTextField + KeyboardToolbar")
         }
-        .padding()
     }
 }
 
@@ -223,9 +388,9 @@ struct MKSFUTextField_Preview: View {
     MKSFUTextField_Preview()
 }
 
-// MARK: - Usage Extension
+// MARK: - Usage Extension (保持向后兼容)
 extension View {
-    /// Quick creation of text field
+    /// Quick creation of text field (向后兼容版本)
     func mkTextField(
         _ text: Binding<String>,
         placeholder: String = "",
@@ -238,7 +403,32 @@ extension View {
             placeholder: placeholder,
             textType: type,
             maxLength: maxLength,
-            onTextChanged: onTextChanged
+            onTextChanged: onTextChanged,
+            toolbarConfig: nil  // 保持原有行为，不显示工具栏
+        )
+    }
+    
+    /// Quick creation of text field with keyboard toolbar (新版本)
+    func mkTextFieldWithToolbar(
+        _ text: Binding<String>,
+        placeholder: String = "",
+        type: MKSFUTextFieldType = .normal,
+        maxLength: Int = 0,
+        toolbarTitle: String = "Done",
+        toolbarColor: Color = Color(MKColor.navBar),
+        onTextChanged: ((String) -> Void)? = nil
+    ) -> some View {
+        MKSFUTextField(
+            text: text,
+            placeholder: placeholder,
+            textType: type,
+            maxLength: maxLength,
+            onTextChanged: onTextChanged,
+            toolbarConfig: MKSFUTextFieldToolbarConfig(
+                showToolbar: true,
+                doneButtonTitle: toolbarTitle,
+                doneButtonColor: toolbarColor
+            )
         )
     }
 }
