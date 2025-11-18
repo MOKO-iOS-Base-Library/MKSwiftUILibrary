@@ -94,6 +94,10 @@ public struct MKSFUFilterByRawDataCell: View {
     public var onMaxIndexChanged: (String, Int) -> Void
     public var onRawDataChanged: (String, Int) -> Void
     
+    // 固定的底部线条样式
+    private let bottomLineColor: Color = Color(red: 238/255, green: 238/255, blue: 238/255)
+    private let bottomLineHeight: CGFloat = 0.5
+    
     public init(
         dataModel: MKSFUFilterByRawDataCellModel,
         onDataTypeChanged: @escaping (String, Int) -> Void = { _, _ in },
@@ -109,97 +113,110 @@ public struct MKSFUFilterByRawDataCell: View {
     }
     
     public var body: some View {
-        VStack(alignment: .leading, spacing: 5) {
-            // Message label
-            Text(dataModel.msg)
-                .font(.system(size: 15))
-                .foregroundColor(.primary)
-                .padding(.horizontal, 15)
-            
-            // Data type and index row
-            HStack(spacing: 5) {
-                // Data type field - 2位十六进制
-                MKSFUTextField(
-                    text: Binding(
-                        get: { dataModel.dataType },
-                        set: { newValue in
-                            dataModel.dataType = newValue
-                            onDataTypeChanged(newValue, dataModel.index)
-                        }
-                    ),
-                    placeholder: dataModel.dataTypePlaceHolder,
-                    textType: .hexCharOnly,
-                    maxLength: 2
-                )
-                .frame(width: 70)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-                
-                Spacer().frame(width: 20)
-                
-                // Min index field - 2位数字
-                MKSFUTextField(
-                    text: Binding(
-                        get: { dataModel.minIndex },
-                        set: { newValue in
-                            dataModel.minIndex = newValue
-                            onMinIndexChanged(newValue, dataModel.index)
-                        }
-                    ),
-                    placeholder: dataModel.minTextFieldPlaceHolder,
-                    textType: .realNumberOnly,
-                    maxLength: 2
-                )
-                .frame(width: 40)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-                
-                Text("~")
-                    .font(.system(size: 20))
+        VStack(alignment: .leading, spacing: 0) {
+            // Main content
+            VStack(alignment: .leading, spacing: 5) {
+                // Message label
+                Text(dataModel.msg)
+                    .font(.system(size: 15))
                     .foregroundColor(.primary)
-                    .frame(width: 20)
+                    .padding(.horizontal, 15)
                 
-                // Max index field - 2位数字
-                MKSFUTextField(
-                    text: Binding(
-                        get: { dataModel.maxIndex },
-                        set: { newValue in
-                            dataModel.maxIndex = newValue
-                            onMaxIndexChanged(newValue, dataModel.index)
-                        }
-                    ),
-                    placeholder: dataModel.maxTextFieldPlaceHolder,
-                    textType: .realNumberOnly,
-                    maxLength: 2
-                )
-                .frame(width: 40)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-                
-                Text("Byte")
-                    .font(.system(size: 13))
-                    .foregroundColor(.primary)
+                // Data type and index row
+                HStack(spacing: 5) {
+                    // Data type field - 2位十六进制
+                    MKSFUTextField(
+                        text: Binding(
+                            get: { dataModel.dataType },
+                            set: { newValue in
+                                dataModel.dataType = newValue
+                                onDataTypeChanged(newValue, dataModel.index)
+                            }
+                        ),
+                        placeholder: dataModel.dataTypePlaceHolder,
+                        textType: .hexCharOnly,
+                        maxLength: 2
+                    )
+                    .frame(width: 70)
+                    
+                    Spacer().frame(width: 20)
+                    
+                    // Min index field - 2位数字
+                    MKSFUTextField(
+                        text: Binding(
+                            get: { dataModel.minIndex },
+                            set: { newValue in
+                                dataModel.minIndex = newValue
+                                onMinIndexChanged(newValue, dataModel.index)
+                            }
+                        ),
+                        placeholder: dataModel.minTextFieldPlaceHolder,
+                        textType: .realNumberOnly,
+                        maxLength: 2
+                    )
                     .frame(width: 40)
+                    
+                    Text("~")
+                        .font(.system(size: 20))
+                        .foregroundColor(.primary)
+                        .frame(width: 20)
+                    
+                    // Max index field - 2位数字
+                    MKSFUTextField(
+                        text: Binding(
+                            get: { dataModel.maxIndex },
+                            set: { newValue in
+                                dataModel.maxIndex = newValue
+                                onMaxIndexChanged(newValue, dataModel.index)
+                            }
+                        ),
+                        placeholder: dataModel.maxTextFieldPlaceHolder,
+                        textType: .realNumberOnly,
+                        maxLength: 2
+                    )
+                    .frame(width: 40)
+                    
+                    Text("Byte")
+                        .font(.system(size: 13))
+                        .foregroundColor(.primary)
+                        .frame(width: 40)
+                    
+                    Spacer()
+                }
+                .padding(.horizontal, 15)
                 
-                Spacer()
+                // Raw data field - 十六进制数据
+                MKSFUTextField(
+                    text: Binding(
+                        get: { dataModel.rawData },
+                        set: { newValue in
+                            dataModel.rawData = newValue
+                            onRawDataChanged(newValue, dataModel.index)
+                        }
+                    ),
+                    placeholder: dataModel.rawTextFieldPlaceHolder,
+                    textType: .hexCharOnly,
+                    maxLength: dataModel.rawDataMaxBytes * 2
+                )
+                .padding(.horizontal, 15)
             }
-            .padding(.horizontal, 15)
+            .padding(.vertical, 5)
+            .background(dataModel.contentColor)
             
-            // Raw data field - 十六进制数据
-            MKSFUTextField(
-                text: Binding(
-                    get: { dataModel.rawData },
-                    set: { newValue in
-                        dataModel.rawData = newValue
-                        onRawDataChanged(newValue, dataModel.index)
-                    }
-                ),
-                placeholder: dataModel.rawTextFieldPlaceHolder,
-                textType: .hexCharOnly,
-                maxLength: dataModel.rawDataMaxBytes * 2
-            )
-            .textFieldStyle(RoundedBorderTextFieldStyle())
-            .padding(.horizontal, 15)
+            // 固定的底部线条，使用 GeometryReader 确保准确的左右间距
+            GeometryReader { geometry in
+                HStack(spacing: 0) {
+                    Spacer().frame(width: 15)
+                    
+                    Rectangle()
+                        .fill(bottomLineColor)
+                        .frame(height: bottomLineHeight)
+                    
+                    Spacer().frame(width: 15)
+                }
+            }
+            .frame(height: bottomLineHeight)
         }
-        .padding(.vertical, 5)
-        .background(dataModel.contentColor)
     }
 }
 
@@ -284,6 +301,8 @@ struct FilterByRawDataExampleView: View {
                     validateModel(rawDataModel1)
                 }
             )
+            .listRowSeparator(.hidden) // 隐藏系统分隔线
+            .listRowInsets(EdgeInsets()) // 移除列表默认的内边距
             
             MKSFUFilterByRawDataCell(
                 dataModel: rawDataModel2,
@@ -304,6 +323,8 @@ struct FilterByRawDataExampleView: View {
                     validateModel(rawDataModel2)
                 }
             )
+            .listRowSeparator(.hidden) // 隐藏系统分隔线
+            .listRowInsets(EdgeInsets()) // 移除列表默认的内边距
         }
         .listStyle(PlainListStyle())
     }
@@ -343,27 +364,46 @@ struct MKSFUFilterByRawDataCell_Previews: PreviewProvider {
             FilterByRawDataExampleView()
                 .previewDisplayName("列表示例")
             
-            MKSFUFilterByRawDataCell(
-                dataModel: MKSFUFilterByRawDataCellModel(
-                    msg: "预览原始数据过滤单元格",
-                    dataType: "AB",
-                    minIndex: "1",
-                    maxIndex: "8",
-                    rawData: "DEADBEEF12345678"
-                )
-            ) { dataType, index in
-                print("DataType: \(dataType)")
-            } onMinIndexChanged: { minIndex, index in
-                print("MinIndex: \(minIndex)")
-            } onMaxIndexChanged: { maxIndex, index in
-                print("MaxIndex: \(maxIndex)")
-            } onRawDataChanged: { rawData, index in
-                print("RawData: \(rawData)")
+            VStack(spacing: 0) {
+                MKSFUFilterByRawDataCell(
+                    dataModel: MKSFUFilterByRawDataCellModel(
+                        msg: "带固定底部线条的单元格",
+                        dataType: "AB",
+                        minIndex: "1",
+                        maxIndex: "8",
+                        rawData: "DEADBEEF12345678"
+                    )
+                ) { dataType, index in
+                    print("DataType: \(dataType)")
+                } onMinIndexChanged: { minIndex, index in
+                    print("MinIndex: \(minIndex)")
+                } onMaxIndexChanged: { maxIndex, index in
+                    print("MaxIndex: \(maxIndex)")
+                } onRawDataChanged: { rawData, index in
+                    print("RawData: \(rawData)")
+                }
+                
+                MKSFUFilterByRawDataCell(
+                    dataModel: MKSFUFilterByRawDataCellModel(
+                        msg: "另一个单元格",
+                        dataType: "CD",
+                        minIndex: "2",
+                        maxIndex: "5",
+                        rawData: "AABBCCDD"
+                    )
+                ) { dataType, index in
+                    print("DataType: \(dataType)")
+                } onMinIndexChanged: { minIndex, index in
+                    print("MinIndex: \(minIndex)")
+                } onMaxIndexChanged: { maxIndex, index in
+                    print("MaxIndex: \(maxIndex)")
+                } onRawDataChanged: { rawData, index in
+                    print("RawData: \(rawData)")
+                }
             }
-            .withValidationStatus()
             .previewLayout(.sizeThatFits)
             .padding()
-            .previewDisplayName("带验证状态的单元格")
+            .previewDisplayName("底部线条展示")
         }
     }
 }

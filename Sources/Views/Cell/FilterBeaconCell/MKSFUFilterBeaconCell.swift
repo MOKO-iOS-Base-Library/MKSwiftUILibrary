@@ -8,6 +8,8 @@
 import SwiftUI
 import Combine
 
+import MKBaseSwiftModule
+
 // MARK: - SwiftUI Data Model
 public class MKSFUFilterBeaconCellModel: ObservableObject {
     @Published public var index: Int = 0
@@ -54,25 +56,28 @@ public struct MKSFUFilterBeaconCell: View {
                     .foregroundColor(.primary)
                     .frame(width: 50, alignment: .leading)
                 
-                TextField("0~65535", text: $minText)
-                    .keyboardType(.numberPad)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .frame(width: 80)
-                    .onChange(of: minText) { newValue in
-                        // 数字验证
-                        let filtered = newValue.filter { $0.isNumber }
-                        if filtered != newValue {
-                            minText = filtered
-                        }
-                        
-                        // 长度限制
-                        if minText.count > 5 {
-                            minText = String(minText.prefix(5))
-                        }
-                        
-                        dataModel.minValue = minText
-                        onMinValueChanged(minText, dataModel.index)
+                // 使用 MKSFUTextField 替换 TextField
+                MKSFUTextField.withDefaultToolbar(
+                    text: $minText,
+                    placeholder: "0~65535",
+                    textType: .realNumberOnly,
+                    maxLength: 5
+                ) { newValue in
+                    // 数字验证
+                    let filtered = newValue.filter { $0.isNumber }
+                    if filtered != newValue {
+                        minText = filtered
                     }
+                    
+                    // 长度限制
+                    if minText.count > 5 {
+                        minText = String(minText.prefix(5))
+                    }
+                    
+                    dataModel.minValue = minText
+                    onMinValueChanged(minText, dataModel.index)
+                }
+                .frame(width: 80)
                 
                 Text("~")
                     .font(.system(size: 15))
@@ -84,25 +89,28 @@ public struct MKSFUFilterBeaconCell: View {
                     .foregroundColor(.primary)
                     .frame(width: 50, alignment: .leading)
                 
-                TextField("0~65535", text: $maxText)
-                    .keyboardType(.numberPad)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .frame(width: 80)
-                    .onChange(of: maxText) { newValue in
-                        // 数字验证
-                        let filtered = newValue.filter { $0.isNumber }
-                        if filtered != newValue {
-                            maxText = filtered
-                        }
-                        
-                        // 长度限制
-                        if maxText.count > 5 {
-                            maxText = String(maxText.prefix(5))
-                        }
-                        
-                        dataModel.maxValue = maxText
-                        onMaxValueChanged(maxText, dataModel.index)
+                // 使用 MKSFUTextField 替换 TextField
+                MKSFUTextField.withDefaultToolbar(
+                    text: $maxText,
+                    placeholder: "0~65535",
+                    textType: .realNumberOnly,
+                    maxLength: 5
+                ) { newValue in
+                    // 数字验证
+                    let filtered = newValue.filter { $0.isNumber }
+                    if filtered != newValue {
+                        maxText = filtered
                     }
+                    
+                    // 长度限制
+                    if maxText.count > 5 {
+                        maxText = String(maxText.prefix(5))
+                    }
+                    
+                    dataModel.maxValue = maxText
+                    onMaxValueChanged(maxText, dataModel.index)
+                }
+                .frame(width: 80)
                 
                 Spacer()
             }
@@ -184,6 +192,8 @@ struct FilterBeaconExampleView: View {
             )
         }
         .listStyle(PlainListStyle())
+        // 在包含导航的视图上添加键盘工具栏
+        .smp_addKeyboardDoneButton(title: "Done", color: Color(MKColor.navBar))
     }
     
     private func validateRange(for model: MKSFUFilterBeaconCellModel) {
@@ -244,6 +254,8 @@ struct SingleFilterBeaconView: View {
             Spacer()
         }
         .padding()
+        // 在包含导航的视图上添加键盘工具栏
+        .smp_addKeyboardDoneButton(title: "Done", color: Color(MKColor.navBar))
     }
     
     private func updateDisplay() {

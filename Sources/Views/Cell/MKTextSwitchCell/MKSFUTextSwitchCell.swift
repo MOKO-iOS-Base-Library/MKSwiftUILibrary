@@ -112,12 +112,6 @@ public struct MKSFUTextSwitchCell: View {
         }
         .background(dataModel.contentColor)
         .contentShape(Rectangle())
-        .onTapGesture {
-            // 支持点击整行切换开关
-            guard dataModel.switchEnable else { return }
-            dataModel.isOn.toggle()
-            onSwitchValueChanged?(dataModel.index, dataModel.isOn)
-        }
     }
 }
 

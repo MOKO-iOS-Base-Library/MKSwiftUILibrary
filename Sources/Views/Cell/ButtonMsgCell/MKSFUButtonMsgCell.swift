@@ -86,6 +86,7 @@ public struct MKSFUButtonMsgCell: View {
                 .disabled(!dataModel.buttonEnable)
                 .background(dataModel.buttonBackColor)
                 .cornerRadius(15)
+                .buttonStyle(PlainButtonStyle()) // 关键：使用 PlainButtonStyle
             }
             .padding(.horizontal, 15)
             .padding(.top, 15)
@@ -104,6 +105,9 @@ public struct MKSFUButtonMsgCell: View {
         }
         .background(dataModel.contentColor)
         .frame(maxWidth: .infinity, alignment: .leading)
+        .contentShape(Rectangle())
+        // 关键：添加一个空的 onTapGesture 来阻止 List 的点击事件
+        .onTapGesture {}
     }
 }
 
@@ -147,12 +151,15 @@ public extension MKSFUButtonMsgCellModel {
 // Example 1: Basic usage in a List
 struct ExampleListView: View {
     @StateObject private var cellModel1 = MKSFUButtonMsgCellModel(
+        index:0,
         msg: "扫描蓝牙设备",
         buttonTitle: "开始扫描",
-        buttonBackColor: .blue, noteMsg: "点击按钮开始扫描附近的蓝牙设备adfasdfasfasdfasdfasdfsadfsdafsadfasdfasdfasdfasdfasdfasdfasdfasdf"
+        buttonBackColor: .blue,
+        noteMsg: "点击按钮开始扫描附近的蓝牙设备"
     )
     
     @StateObject private var cellModel2 = MKSFUButtonMsgCellModel(
+        index:1,
         msg: "设备连接",
         buttonTitle: "连接",
         buttonBackColor: .green
@@ -164,11 +171,15 @@ struct ExampleListView: View {
                 print("开始扫描设备，index: \(index)")
                 // Handle scan action
             }
+            .listRowInsets(EdgeInsets())
+            .background(Color.white)
             
             MKSFUButtonMsgCell(dataModel: cellModel2) { index in
                 print("连接设备，index: \(index)")
                 // Handle connect action
             }
+            .listRowInsets(EdgeInsets())
+            .background(Color.white)
         }
         .listStyle(PlainListStyle())
     }
@@ -191,9 +202,14 @@ struct DynamicExampleView: View {
                 updateUI()
             }
             .padding()
+            .background(Color.white)
+            .cornerRadius(8)
+            .shadow(radius: 2)
             
             Spacer()
         }
+        .padding()
+        .background(Color.gray.opacity(0.1))
     }
     
     private func updateUI() {
@@ -231,6 +247,7 @@ struct MKSFUButtonMsgCell_Previews: PreviewProvider {
             }
             .previewLayout(.sizeThatFits)
             .padding()
+            .background(Color.white)
             .previewDisplayName("Single Cell")
         }
     }

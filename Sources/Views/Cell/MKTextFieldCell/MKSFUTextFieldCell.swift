@@ -7,6 +7,8 @@
 
 import SwiftUI
 
+import MKBaseSwiftModule
+
 // MARK: - Enums
 public enum MKSFUTextFieldCellType {
     case normal
@@ -41,6 +43,11 @@ public class MKSFUTextFieldCellModel: ObservableObject, Identifiable {
     @Published public var textFieldType: MKSFUTextFieldType = .normal
     @Published public var maxLength: Int = 0
     @Published public var borderColor: Color = .gray.opacity(0.3)
+    
+    // MARK: TextField Toolbar Configuration
+    @Published public var showToolbar: Bool = true
+    @Published public var toolbarTitle: String = "Done"
+    @Published public var toolbarColor: Color = Color(MKColor.navBar)
     
     // MARK: Bottom Label Configuration
     @Published public var noteMsg: String = ""
@@ -134,18 +141,87 @@ public struct MKSFUTextFieldCell: View {
     // MARK: - TextField View
     private var textFieldView: some View {
         ZStack {
-            // 背景和边框
-            RoundedRectangle(cornerRadius: dataModel.cellType == .normal ? 6 : 0)
-                .stroke(dataModel.borderColor, lineWidth: dataModel.cellType == .normal ? 0.5 : 0)
-                .background(Color.white)
-            
-            // 使用 SwiftUI 原生的 TextField
-            TextField(dataModel.textPlaceholder, text: $textValue)
-                .font(dataModel.textFieldTextFont)
-                .foregroundColor(dataModel.textFieldTextColor)
-                .disabled(!dataModel.textEnable)
-                .padding(.horizontal, 8)
+            // 使用 MKSFUTextField
+            MKSFUTextField(
+                text: Binding(
+                    get: { textValue },
+                    set: { newValue in
+                        textValue = newValue
+                        dataModel.textFieldValue = newValue
+                        onTextValueChanged?(dataModel.index, newValue)
+                    }
+                ),
+                placeholder: dataModel.textPlaceholder,
+                textType: dataModel.textFieldType,
+                maxLength: dataModel.maxLength,
+                onTextChanged: { newValue in
+                    // 这里可以添加额外的文本变化处理逻辑
+                },
+                toolbarConfig: dataModel.showToolbar ?
+                    MKSFUTextFieldToolbarConfig(
+                        showToolbar: true,
+                        doneButtonTitle: dataModel.toolbarTitle,
+                        doneButtonColor: dataModel.toolbarColor
+                    ) : nil
+            )
+            .disabled(!dataModel.textEnable)
+            .padding(.horizontal, 8)
         }
+    }
+}
+
+// MARK: - 便捷初始化方法扩展
+public extension MKSFUTextFieldCellModel {
+    /// 便捷初始化方法
+    convenience init(
+        index: Int = 0,
+        contentColor: Color = .white,
+        msg: String,
+        msgColor: Color = .primary,
+        msgFont: Font = .system(size: 15),
+        unit: String = "",
+        unitColor: Color = .primary,
+        unitFont: Font = .system(size: 13),
+        textEnable: Bool = true,
+        cellType: MKSFUTextFieldCellType = .normal,
+        textFieldValue: String = "",
+        textPlaceholder: String = "",
+        textFieldTextColor: Color = .primary,
+        textFieldTextFont: Font = .system(size: 15),
+        textFieldType: MKSFUTextFieldType = .normal,
+        maxLength: Int = 0,
+        borderColor: Color = .gray.opacity(0.3),
+        showToolbar: Bool = true,
+        toolbarTitle: String = "Done",
+        toolbarColor: Color = Color(MKColor.navBar),
+        noteMsg: String = "",
+        noteMsgColor: Color = .primary,
+        noteMsgFont: Font = .system(size: 12)
+    ) {
+        self.init()
+        self.index = index
+        self.contentColor = contentColor
+        self.msg = msg
+        self.msgColor = msgColor
+        self.msgFont = msgFont
+        self.unit = unit
+        self.unitColor = unitColor
+        self.unitFont = unitFont
+        self.textEnable = textEnable
+        self.cellType = cellType
+        self.textFieldValue = textFieldValue
+        self.textPlaceholder = textPlaceholder
+        self.textFieldTextColor = textFieldTextColor
+        self.textFieldTextFont = textFieldTextFont
+        self.textFieldType = textFieldType
+        self.maxLength = maxLength
+        self.borderColor = borderColor
+        self.showToolbar = showToolbar
+        self.toolbarTitle = toolbarTitle
+        self.toolbarColor = toolbarColor
+        self.noteMsg = noteMsg
+        self.noteMsgColor = noteMsgColor
+        self.noteMsgFont = noteMsgFont
     }
 }
 
@@ -159,6 +235,7 @@ struct MKSFUTextFieldCellSimplePreview: View {
                     model.msg = "设备名称"
                     model.textPlaceholder = "请输入"
                     model.textFieldValue = "测试设备"
+                    model.textFieldType = .normal
                     return model
                 }()
             ) { index, text in
@@ -173,7 +250,25 @@ struct MKSFUTextFieldCellSimplePreview: View {
                     model.unit = "dBm"
                     model.textPlaceholder = "请输入"
                     model.textFieldValue = "-65"
+                    model.textFieldType = .realNumberOnly
+                    model.maxLength = 3
                     model.noteMsg = "信号强度说明信号强度说明信号强度说明信号强度说明信号强度说明信号强度说明信号强度说明信号强度说明信号强度说明信号强度说明信号强度说明信号强度说明信号强度说明信号强度说明信号强度说明"
+                    return model
+                }()
+            ) { index, text in
+                print("输入: \(text)")
+            }
+            .background(Color.white)
+            
+            MKSFUTextFieldCell(
+                dataModel: {
+                    let model = MKSFUTextFieldCellModel()
+                    model.msg = "MAC地址"
+                    model.textPlaceholder = "输入MAC"
+                    model.textFieldValue = "A1B2C3"
+                    model.textFieldType = .hexCharOnly
+                    model.maxLength = 12
+                    model.showToolbar = false
                     return model
                 }()
             ) { index, text in
@@ -215,7 +310,70 @@ struct MKSFUTextFieldCellBasicUsage: View {
         cellModel.unit = "个"
         cellModel.textPlaceholder = "请输入名称"
         cellModel.textFieldValue = "默认设备"
+        cellModel.textFieldType = .normal
         cellModel.noteMsg = "请输入有效的设备名称"
+    }
+}
+
+// MARK: - 不同类型输入框示例
+struct TextFieldTypesExample: View {
+    var body: some View {
+        VStack(spacing: 1) {
+            MKSFUTextFieldCell(
+                dataModel: {
+                    let model = MKSFUTextFieldCellModel()
+                    model.msg = "普通文本"
+                    model.textPlaceholder = "可输入任意字符"
+                    model.textFieldType = .normal
+                    return model
+                }()
+            ) { index, text in
+                print("普通文本: \(text)")
+            }
+            .background(Color.white)
+            
+            MKSFUTextFieldCell(
+                dataModel: {
+                    let model = MKSFUTextFieldCellModel()
+                    model.msg = "纯数字"
+                    model.textPlaceholder = "只能输入数字"
+                    model.textFieldType = .realNumberOnly
+                    model.maxLength = 5
+                    return model
+                }()
+            ) { index, text in
+                print("数字: \(text)")
+            }
+            .background(Color.white)
+            
+            MKSFUTextFieldCell(
+                dataModel: {
+                    let model = MKSFUTextFieldCellModel()
+                    model.msg = "十六进制"
+                    model.textPlaceholder = "0-9,A-F"
+                    model.textFieldType = .hexCharOnly
+                    model.maxLength = 6
+                    return model
+                }()
+            ) { index, text in
+                print("十六进制: \(text)")
+            }
+            .background(Color.white)
+            
+            MKSFUTextFieldCell(
+                dataModel: {
+                    let model = MKSFUTextFieldCellModel()
+                    model.msg = "UUID"
+                    model.textPlaceholder = "自动格式化"
+                    model.textFieldType = .uuidMode
+                    return model
+                }()
+            ) { index, text in
+                print("UUID: \(text)")
+            }
+            .background(Color.white)
+        }
+        .padding()
     }
 }
 
@@ -228,6 +386,9 @@ struct MKSFUTextFieldCell_Previews: PreviewProvider {
             
             MKSFUTextFieldCellBasicUsage()
                 .previewDisplayName("基础使用")
+            
+            TextFieldTypesExample()
+                .previewDisplayName("不同类型输入框")
         }
     }
 }

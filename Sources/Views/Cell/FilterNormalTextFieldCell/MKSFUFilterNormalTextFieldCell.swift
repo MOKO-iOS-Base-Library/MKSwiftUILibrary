@@ -7,8 +7,6 @@
 
 import SwiftUI
 
-
-
 // MARK: - SwiftUI Data Model
 public class MKSFUFilterNormalTextFieldCellModel: ObservableObject {
     @Published public var index: Int = 0
@@ -26,6 +24,10 @@ public struct MKSFUFilterNormalTextFieldCell: View {
     @ObservedObject public var dataModel: MKSFUFilterNormalTextFieldCellModel
     public var onTextValueChanged: (String, Int) -> Void
     
+    // 固定的底部线条样式
+    private let bottomLineColor: Color = Color(red: 238/255, green: 238/255, blue: 238/255)
+    private let bottomLineHeight: CGFloat = 0.5
+    
     public init(
         dataModel: MKSFUFilterNormalTextFieldCellModel,
         onTextValueChanged: @escaping (String, Int) -> Void = { _, _ in }
@@ -35,30 +37,46 @@ public struct MKSFUFilterNormalTextFieldCell: View {
     }
     
     public var body: some View {
-        VStack(alignment: .leading, spacing: 5) {
-            // Message label
-            Text(dataModel.msg)
-                .font(.system(size: 15))
-                .foregroundColor(.primary)
+        VStack(alignment: .leading, spacing: 0) {
+            // Main content
+            VStack(alignment: .leading, spacing: 5) {
+                // Message label
+                Text(dataModel.msg)
+                    .font(.system(size: 15))
+                    .foregroundColor(.primary)
+                    .padding(.horizontal, 15)
+                
+                // Text field
+                MKSFUTextField(
+                    text: Binding(
+                        get: { dataModel.textFieldValue },
+                        set: { newValue in
+                            dataModel.textFieldValue = newValue
+                            onTextValueChanged(newValue, dataModel.index)
+                        }
+                    ),
+                    placeholder: dataModel.textPlaceholder,
+                    textType: dataModel.textFieldType,
+                    maxLength: dataModel.maxLength
+                )
                 .padding(.horizontal, 15)
+            }
+            .padding(.vertical, 5)
             
-            // Text field
-            MKSFUTextField(
-                text: Binding(
-                    get: { dataModel.textFieldValue },
-                    set: { newValue in
-                        dataModel.textFieldValue = newValue
-                        onTextValueChanged(newValue, dataModel.index)
-                    }
-                ),
-                placeholder: dataModel.textPlaceholder,
-                textType: dataModel.textFieldType,
-                maxLength: dataModel.maxLength
-            )
-            .textFieldStyle(RoundedBorderTextFieldStyle())
-            .padding(.horizontal, 15)
+            // 固定的底部线条，使用 GeometryReader 确保准确的左右间距
+            GeometryReader { geometry in
+                HStack(spacing: 0) {
+                    Spacer().frame(width: 15)
+                    
+                    Rectangle()
+                        .fill(bottomLineColor)
+                        .frame(height: bottomLineHeight)
+                    
+                    Spacer().frame(width: 15)
+                }
+            }
+            .frame(height: bottomLineHeight)
         }
-        .padding(.vertical, 5)
     }
 }
 
@@ -119,14 +137,20 @@ struct NormalTextFieldExampleView: View {
             MKSFUFilterNormalTextFieldCell(dataModel: textFieldModel1) { text, index in
                 print("设备名称变化: \(text) at index: \(index)")
             }
+            .listRowSeparator(.hidden)
+            .listRowInsets(EdgeInsets())
             
             MKSFUFilterNormalTextFieldCell(dataModel: textFieldModel2) { text, index in
                 print("设备编号变化: \(text) at index: \(index)")
             }
+            .listRowSeparator(.hidden)
+            .listRowInsets(EdgeInsets())
             
             MKSFUFilterNormalTextFieldCell(dataModel: textFieldModel3) { text, index in
                 print("MAC地址变化: \(text) at index: \(index)")
             }
+            .listRowSeparator(.hidden)
+            .listRowInsets(EdgeInsets())
         }
         .listStyle(PlainListStyle())
     }
@@ -170,25 +194,17 @@ struct TextFieldTypesExampleView: View {
                 print("普通文本: \(text)")
             }
             
-            Divider()
-            
             MKSFUFilterNormalTextFieldCell(dataModel: numberModel) { text, _ in
                 print("数字: \(text)")
             }
-            
-            Divider()
             
             MKSFUFilterNormalTextFieldCell(dataModel: letterModel) { text, _ in
                 print("字母: \(text)")
             }
             
-            Divider()
-            
             MKSFUFilterNormalTextFieldCell(dataModel: hexModel) { text, _ in
                 print("十六进制: \(text)")
             }
-            
-            Divider()
             
             MKSFUFilterNormalTextFieldCell(dataModel: uuidModel) { text, _ in
                 print("UUID: \(text)")

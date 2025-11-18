@@ -31,6 +31,10 @@ public struct MKSFUDeviceInfoDfuCell: View {
     @ObservedObject public var dataModel: MKSFUDeviceInfoDfuCellModel
     public var onButtonAction: (Int) -> Void
     
+    // 固定的底部线条样式
+    private let bottomLineColor: Color = Color(red: 238/255, green: 238/255, blue: 238/255)
+    private let bottomLineHeight: CGFloat = 0.5
+    
     public init(
         dataModel: MKSFUDeviceInfoDfuCellModel,
         onButtonAction: @escaping (Int) -> Void = { _ in }
@@ -40,36 +44,56 @@ public struct MKSFUDeviceInfoDfuCell: View {
     }
     
     public var body: some View {
-        HStack(spacing: 10) {
-            // Left message
-            Text(dataModel.leftMsg)
-                .font(.system(size: 15))
-                .foregroundColor(.primary)
-                .multilineTextAlignment(.leading)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            
-            // Right message
-            Text(dataModel.rightMsg)
-                .font(.system(size: 13))
-                .foregroundColor(Color(red: 0.5, green: 0.5, blue: 0.5)) // #808080
-                .multilineTextAlignment(.trailing)
-                .frame(maxWidth: .infinity, alignment: .trailing)
-            
-            // Right button
-            Button(action: {
-                onButtonAction(dataModel.index)
-            }) {
-                Text(dataModel.rightButtonTitle)
-                    .font(.system(size: 12))
-                    .foregroundColor(.white)
-                    .frame(width: 50, height: 35)
+        VStack(alignment: .leading, spacing: 0) {
+            // Main content
+            HStack(spacing: 10) {
+                // Left message
+                Text(dataModel.leftMsg)
+                    .font(.system(size: 15))
+                    .foregroundColor(.primary)
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                
+                // Right message
+                Text(dataModel.rightMsg)
+                    .font(.system(size: 13))
+                    .foregroundColor(Color(red: 0.5, green: 0.5, blue: 0.5)) // #808080
+                    .multilineTextAlignment(.trailing)
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+                
+                // Right button - 只有这个按钮会触发点击回调
+                Button(action: {
+                    onButtonAction(dataModel.index)
+                }) {
+                    Text(dataModel.rightButtonTitle)
+                        .font(.system(size: 12))
+                        .foregroundColor(.white)
+                        .frame(width: 50, height: 35)
+                }
+                .background(Color.blue)
+                .cornerRadius(8)
+                .buttonStyle(PlainButtonStyle())
             }
-            .background(Color.blue)
-            .cornerRadius(8)
+            .padding(.horizontal, 15)
+            .padding(.vertical, 10)
+            .frame(maxWidth: .infinity, minHeight: 44)
+            
+            // 固定的底部线条，使用 GeometryReader 确保准确的左右间距
+            GeometryReader { geometry in
+                HStack(spacing: 0) {
+                    Spacer().frame(width: 15)
+                    
+                    Rectangle()
+                        .fill(bottomLineColor)
+                        .frame(height: bottomLineHeight)
+                    
+                    Spacer().frame(width: 15)
+                }
+            }
+            .frame(height: bottomLineHeight)
         }
-        .padding(.horizontal, 15)
-        .padding(.vertical, 10)
-        .frame(maxWidth: .infinity, minHeight: 44)
+        // 关键：添加空的 onTapGesture 来阻止 List 的点击事件
+        .onTapGesture {}
     }
 }
 
@@ -130,11 +154,12 @@ struct DeviceInfoDfuExampleView: View {
     
     var body: some View {
         List {
-            ForEach(0..<deviceModels.count, id: \.self) { index in
+            ForEach(deviceModels.indices, id: \.self) { index in
                 MKSFUDeviceInfoDfuCell(dataModel: deviceModels[index]) { cellIndex in
                     print("DFU按钮点击，单元格索引: \(cellIndex)")
                     handleDfuAction(at: cellIndex)
                 }
+                .listRowSeparator(.hidden)
                 .listRowInsets(EdgeInsets())
             }
         }
@@ -157,149 +182,16 @@ struct DeviceInfoDfuExampleView: View {
     }
 }
 
-// Example 2: 使用ViewModel管理的DFU列表
-struct DeviceInfoDfuWithViewModelView: View {
-    @StateObject private var viewModel: DeviceInfoDfuViewModel = DeviceInfoDfuViewModel(deviceModels: [
-        MKSFUDeviceInfoDfuCellModel(
-            index: 0,
-            leftMsg: "主控制器固件",
-            rightMsg: "v3.0.1",
-            rightButtonTitle: "DFU"
-        ),
-        MKSFUDeviceInfoDfuCellModel(
-            index: 1,
-            leftMsg: "蓝牙模块固件",
-            rightMsg: "v2.5.0",
-            rightButtonTitle: "更新"
-        ),
-        MKSFUDeviceInfoDfuCellModel(
-            index: 2,
-            leftMsg: "传感器固件",
-            rightMsg: "v1.8.2",
-            rightButtonTitle: "升级"
-        )
-    ])
-    
-    var body: some View {
-        List {
-            ForEach(0..<viewModel.deviceModels.count, id: \.self) { index in
-                MKSFUDeviceInfoDfuCell(dataModel: viewModel.deviceModels[index]) { cellIndex in
-                    viewModel.handleButtonAction(at: cellIndex)
-                }
-                .listRowInsets(EdgeInsets())
-            }
-        }
-        .listStyle(PlainListStyle())
-    }
-}
-
-// Example 3: 分组DFU设备信息
-struct GroupedDeviceInfoDfuView: View {
-    @State private var mainDeviceModels: [MKSFUDeviceInfoDfuCellModel] = [
-        MKSFUDeviceInfoDfuCellModel(
-            index: 0,
-            leftMsg: "主设备固件",
-            rightMsg: "v3.2.1 (最新)",
-            rightButtonTitle: "升级"
-        ),
-        MKSFUDeviceInfoDfuCellModel(
-            index: 1,
-            leftMsg: "安全补丁",
-            rightMsg: "2024-01",
-            rightButtonTitle: "安装"
-        )
-    ]
-    
-    @State private var moduleModels: [MKSFUDeviceInfoDfuCellModel] = [
-        MKSFUDeviceInfoDfuCellModel(
-            index: 2,
-            leftMsg: "通信模块",
-            rightMsg: "v2.1.0 (需更新)",
-            rightButtonTitle: "更新"
-        ),
-        MKSFUDeviceInfoDfuCellModel(
-            index: 3,
-            leftMsg: "传感器模块",
-            rightMsg: "v1.5.3",
-            rightButtonTitle: "检查"
-        )
-    ]
-    
-    var body: some View {
-        VStack(spacing: 0) {
-            // 主设备固件组
-            VStack(alignment: .leading, spacing: 0) {
-                Text("主设备固件")
-                    .font(.headline)
-                    .foregroundColor(.primary)
-                    .padding(.horizontal, 15)
-                    .padding(.vertical, 10)
-                
-                ForEach(0..<mainDeviceModels.count, id: \.self) { index in
-                    MKSFUDeviceInfoDfuCell(dataModel: mainDeviceModels[index]) { cellIndex in
-                        handleMainDeviceAction(at: cellIndex)
-                    }
-                    if index < mainDeviceModels.count - 1 {
-                        Divider()
-                            .padding(.leading, 15)
-                    }
-                }
-            }
-            .background(Color(.systemBackground))
-            
-            Divider()
-            
-            // 模块固件组
-            VStack(alignment: .leading, spacing: 0) {
-                Text("模块固件")
-                    .font(.headline)
-                    .foregroundColor(.primary)
-                    .padding(.horizontal, 15)
-                    .padding(.vertical, 10)
-                
-                ForEach(0..<moduleModels.count, id: \.self) { index in
-                    MKSFUDeviceInfoDfuCell(dataModel: moduleModels[index]) { cellIndex in
-                        handleModuleAction(at: cellIndex)
-                    }
-                    if index < moduleModels.count - 1 {
-                        Divider()
-                            .padding(.leading, 15)
-                    }
-                }
-            }
-            .background(Color(.systemBackground))
-        }
-    }
-    
-    private func handleMainDeviceAction(at index: Int) {
-        switch index {
-        case 0:
-            print("开始主设备固件升级")
-        case 1:
-            print("安装安全补丁")
-        default:
-            break
-        }
-    }
-    
-    private func handleModuleAction(at index: Int) {
-        switch index {
-        case 2:
-            print("更新通信模块固件")
-        case 3:
-            print("检查传感器模块更新")
-        default:
-            break
-        }
-    }
-}
-
 // MARK: - 带状态的DFU单元格
 public struct MKSFUDeviceInfoDfuCellWithState: View {
     @ObservedObject public var dataModel: MKSFUDeviceInfoDfuCellModel
     public var onButtonAction: (Int) -> Void
     
     @State private var isUpdating: Bool = false
+    
+    // 固定的底部线条样式
+    private let bottomLineColor: Color = Color(red: 238/255, green: 238/255, blue: 238/255)
+    private let bottomLineHeight: CGFloat = 0.5
     
     public init(
         dataModel: MKSFUDeviceInfoDfuCellModel,
@@ -310,74 +202,70 @@ public struct MKSFUDeviceInfoDfuCellWithState: View {
     }
     
     public var body: some View {
-        HStack(spacing: 10) {
-            // Left message
-            Text(dataModel.leftMsg)
-                .font(.system(size: 15))
-                .foregroundColor(.primary)
-                .multilineTextAlignment(.leading)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            
-            // Right message
-            Text(dataModel.rightMsg)
-                .font(.system(size: 13))
-                .foregroundColor(Color(red: 0.5, green: 0.5, blue: 0.5))
-                .multilineTextAlignment(.trailing)
-                .frame(maxWidth: .infinity, alignment: .trailing)
-            
-            // Right button with state
-            Button(action: {
-                isUpdating = true
-                onButtonAction(dataModel.index)
-                // 模拟更新完成
-                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                    isUpdating = false
-                }
-            }) {
-                Group {
-                    if isUpdating {
-                        ProgressView()
-                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                            .scaleEffect(0.8)
-                    } else {
-                        Text(dataModel.rightButtonTitle)
-                            .font(.system(size: 12))
-                            .foregroundColor(.white)
+        VStack(alignment: .leading, spacing: 0) {
+            // Main content
+            HStack(spacing: 10) {
+                // Left message
+                Text(dataModel.leftMsg)
+                    .font(.system(size: 15))
+                    .foregroundColor(.primary)
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                
+                // Right message
+                Text(dataModel.rightMsg)
+                    .font(.system(size: 13))
+                    .foregroundColor(Color(red: 0.5, green: 0.5, blue: 0.5))
+                    .multilineTextAlignment(.trailing)
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+                
+                // Right button with state - 只有这个按钮会触发点击回调
+                Button(action: {
+                    isUpdating = true
+                    onButtonAction(dataModel.index)
+                    // 模拟更新完成
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                        isUpdating = false
                     }
+                }) {
+                    Group {
+                        if isUpdating {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                .scaleEffect(0.8)
+                        } else {
+                            Text(dataModel.rightButtonTitle)
+                                .font(.system(size: 12))
+                                .foregroundColor(.white)
+                        }
+                    }
+                    .frame(width: 50, height: 35)
                 }
-                .frame(width: 50, height: 35)
+                .background(isUpdating ? Color.gray : Color.blue)
+                .cornerRadius(8)
+                .disabled(isUpdating)
+                .buttonStyle(PlainButtonStyle())
             }
-            .background(isUpdating ? Color.gray : Color.blue)
-            .cornerRadius(8)
-            .disabled(isUpdating)
-        }
-        .padding(.horizontal, 15)
-        .padding(.vertical, 10)
-        .frame(maxWidth: .infinity, minHeight: 44)
-    }
-}
-
-// Example 4: 带状态的DFU示例
-struct DeviceInfoDfuWithStateExample: View {
-    @State private var deviceModels: [MKSFUDeviceInfoDfuCellModel] = [
-        MKSFUDeviceInfoDfuCellModel(
-            index: 0,
-            leftMsg: "系统固件",
-            rightMsg: "v4.0.0",
-            rightButtonTitle: "升级"
-        )
-    ]
-    
-    var body: some View {
-        List {
-            ForEach(0..<deviceModels.count, id: \.self) { index in
-                MKSFUDeviceInfoDfuCellWithState(dataModel: deviceModels[index]) { cellIndex in
-                    print("开始升级固件，索引: \(cellIndex)")
+            .padding(.horizontal, 15)
+            .padding(.vertical, 10)
+            .frame(maxWidth: .infinity, minHeight: 44)
+            
+            // 固定的底部线条，使用 GeometryReader 确保准确的左右间距
+            GeometryReader { geometry in
+                HStack(spacing: 0) {
+                    Spacer().frame(width: 15)
+                    
+                    Rectangle()
+                        .fill(bottomLineColor)
+                        .frame(height: bottomLineHeight)
+                    
+                    Spacer().frame(width: 15)
                 }
-                .listRowInsets(EdgeInsets())
             }
+            .frame(height: bottomLineHeight)
         }
-        .listStyle(PlainListStyle())
+        // 关键：添加空的 onTapGesture 来阻止 List 的点击事件
+        .onTapGesture {}
     }
 }
 
@@ -385,41 +273,52 @@ struct DeviceInfoDfuWithStateExample: View {
 public extension MKSFUDeviceInfoDfuCell {
     /// 自定义按钮颜色
     func withButtonColor(_ color: Color) -> some View {
-        HStack(spacing: 10) {
-            Text(dataModel.leftMsg)
-                .font(.system(size: 15))
-                .foregroundColor(.primary)
-                .multilineTextAlignment(.leading)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            
-            Text(dataModel.rightMsg)
-                .font(.system(size: 13))
-                .foregroundColor(Color(red: 0.5, green: 0.5, blue: 0.5))
-                .multilineTextAlignment(.trailing)
-                .frame(maxWidth: .infinity, alignment: .trailing)
-            
-            Button(action: {
-                onButtonAction(dataModel.index)
-            }) {
-                Text(dataModel.rightButtonTitle)
-                    .font(.system(size: 12))
-                    .foregroundColor(.white)
-                    .frame(width: 50, height: 35)
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(spacing: 10) {
+                Text(dataModel.leftMsg)
+                    .font(.system(size: 15))
+                    .foregroundColor(.primary)
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                
+                Text(dataModel.rightMsg)
+                    .font(.system(size: 13))
+                    .foregroundColor(Color(red: 0.5, green: 0.5, blue: 0.5))
+                    .multilineTextAlignment(.trailing)
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+                
+                Button(action: {
+                    onButtonAction(dataModel.index)
+                }) {
+                    Text(dataModel.rightButtonTitle)
+                        .font(.system(size: 12))
+                        .foregroundColor(.white)
+                        .frame(width: 50, height: 35)
+                }
+                .background(color)
+                .cornerRadius(8)
+                .buttonStyle(PlainButtonStyle())
             }
-            .background(color)
-            .cornerRadius(8)
+            .padding(.horizontal, 15)
+            .padding(.vertical, 10)
+            .frame(maxWidth: .infinity, minHeight: 44)
+            
+            // 固定的底部线条
+            GeometryReader { geometry in
+                HStack(spacing: 0) {
+                    Spacer().frame(width: 15)
+                    
+                    Rectangle()
+                        .fill(bottomLineColor)
+                        .frame(height: bottomLineHeight)
+                    
+                    Spacer().frame(width: 15)
+                }
+            }
+            .frame(height: bottomLineHeight)
         }
-        .padding(.horizontal, 15)
-        .padding(.vertical, 10)
-        .frame(maxWidth: .infinity, minHeight: 44)
-    }
-    
-    /// 带边框的单元格
-    func withBorder(_ color: Color = .gray, width: CGFloat = 0.5) -> some View {
-        self.overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(color, lineWidth: width)
-        )
+        // 关键：添加空的 onTapGesture 来阻止 List 的点击事件
+        .onTapGesture {}
     }
 }
 
@@ -430,28 +329,7 @@ struct MKSFUDeviceInfoDfuCell_Previews: PreviewProvider {
             // 示例1: DFU设备信息列表
             DeviceInfoDfuExampleView()
                 .previewDisplayName("DFU设备信息列表")
-        }
-        
-        Group {
-            // 示例2: 使用ViewModel的DFU列表
-            DeviceInfoDfuWithViewModelView()
-                .previewDisplayName("使用ViewModel的DFU列表")
-        }
-        
-        Group {
-            // 示例3: 分组DFU设备信息
-            GroupedDeviceInfoDfuView()
-                .previewLayout(.fixed(width: 375, height: 300))
-                .previewDisplayName("分组DFU设备信息")
-        }
-        
-        Group {
-            // 示例4: 带状态的DFU单元格
-            DeviceInfoDfuWithStateExample()
-                .previewDisplayName("带状态的DFU单元格")
-        }
-        
-        Group {
+            
             // 单个单元格预览
             VStack(spacing: 0) {
                 MKSFUDeviceInfoDfuCell(
@@ -463,11 +341,6 @@ struct MKSFUDeviceInfoDfuCell_Previews: PreviewProvider {
                 ) { index in
                     print("按钮点击: \(index)")
                 }
-                .frame(height: 60)
-                
-                Rectangle()
-                    .fill(Color.gray.opacity(0.3))
-                    .frame(height: 1)
                 
                 MKSFUDeviceInfoDfuCell(
                     dataModel: MKSFUDeviceInfoDfuCellModel(
@@ -478,61 +351,9 @@ struct MKSFUDeviceInfoDfuCell_Previews: PreviewProvider {
                 ) { index in
                     print("按钮点击: \(index)")
                 }
-                .frame(height: 60)
             }
             .previewLayout(.fixed(width: 375, height: 130))
             .previewDisplayName("单个DFU单元格样式")
         }
-    }
-}
-
-// MARK: - 简化预览版本（如果上面的还有问题，使用这个）
-struct MKSFUDeviceInfoDfuCell_SimplePreview: PreviewProvider {
-    static var previews: some View {
-        // 只预览单个单元格
-        VStack {
-            MKSFUDeviceInfoDfuCell(
-                dataModel: MKSFUDeviceInfoDfuCellModel(
-                    leftMsg: "固件版本",
-                    rightMsg: "v2.1.5",
-                    rightButtonTitle: "升级"
-                )
-            ) { _ in }
-            
-            MKSFUDeviceInfoDfuCell(
-                dataModel: MKSFUDeviceInfoDfuCellModel(
-                    leftMsg: "设备信息",
-                    rightMsg: "需要更新",
-                    rightButtonTitle: "更新"
-                )
-            ) { _ in }
-        }
-        .padding()
-        .previewLayout(.sizeThatFits)
-    }
-}
-
-// MARK: - 分离的预览组
-struct DeviceInfoDfuExampleView_Previews: PreviewProvider {
-    static var previews: some View {
-        DeviceInfoDfuExampleView()
-    }
-}
-
-struct DeviceInfoDfuWithViewModelView_Previews: PreviewProvider {
-    static var previews: some View {
-        DeviceInfoDfuWithViewModelView()
-    }
-}
-
-struct GroupedDeviceInfoDfuView_Previews: PreviewProvider {
-    static var previews: some View {
-        GroupedDeviceInfoDfuView()
-    }
-}
-
-struct DeviceInfoDfuWithStateExample_Previews: PreviewProvider {
-    static var previews: some View {
-        DeviceInfoDfuWithStateExample()
     }
 }

@@ -38,29 +38,50 @@ public class MKSFUDeviceInfoCellModel: ObservableObject {
 public struct MKSFUDeviceInfoCell: View {
     @ObservedObject public var dataModel: MKSFUDeviceInfoCellModel
     
+    // 固定的底部线条样式
+    private let bottomLineColor: Color = Color(red: 238/255, green: 238/255, blue: 238/255)
+    private let bottomLineHeight: CGFloat = 0.5
+    
     public init(dataModel: MKSFUDeviceInfoCellModel) {
         self.dataModel = dataModel
     }
     
     public var body: some View {
-        HStack(alignment: .top, spacing: 10) {
-            // Left message
-            Text(dataModel.leftMsg)
-                .font(.system(size: 15))
-                .foregroundColor(.primary)
-                .multilineTextAlignment(.leading)
-                .frame(maxWidth: .infinity, alignment: .leading)
+        VStack(alignment: .leading, spacing: 0) {
+            // Main content
+            HStack(alignment: .top, spacing: 10) {
+                // Left message
+                Text(dataModel.leftMsg)
+                    .font(.system(size: 15))
+                    .foregroundColor(.primary)
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                
+                // Right message
+                Text(dataModel.rightMsg)
+                    .font(.system(size: 13))
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.trailing)
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+            }
+            .padding(.horizontal, 15)
+            .padding(.vertical, 10)
+            .frame(maxWidth: .infinity, minHeight: 44)
             
-            // Right message
-            Text(dataModel.rightMsg)
-                .font(.system(size: 13))
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.trailing)
-                .frame(maxWidth: .infinity, alignment: .trailing)
+            // 固定的底部线条，使用 GeometryReader 确保准确的左右间距
+            GeometryReader { geometry in
+                HStack(spacing: 0) {
+                    Spacer().frame(width: 15)
+                    
+                    Rectangle()
+                        .fill(bottomLineColor)
+                        .frame(height: bottomLineHeight)
+                    
+                    Spacer().frame(width: 15)
+                }
+            }
+            .frame(height: bottomLineHeight)
         }
-        .padding(.horizontal, 15)
-        .padding(.vertical, 10)
-        .frame(maxWidth: .infinity, minHeight: 44)
     }
 }
 
@@ -69,38 +90,59 @@ public struct ClickableDeviceInfoCell: View {
     @ObservedObject public var dataModel: MKSFUDeviceInfoCellModel
     public var onCellTapped: (() -> Void)?
     
+    // 固定的底部线条样式
+    private let bottomLineColor: Color = Color(red: 238/255, green: 238/255, blue: 238/255)
+    private let bottomLineHeight: CGFloat = 0.5
+    
     public init(dataModel: MKSFUDeviceInfoCellModel, onCellTapped: (() -> Void)? = nil) {
         self.dataModel = dataModel
         self.onCellTapped = onCellTapped
     }
     
     public var body: some View {
-        Button(action: {
-            onCellTapped?()
-        }) {
-            HStack(alignment: .top, spacing: 10) {
-                Text(dataModel.leftMsg)
-                    .font(.system(size: 15))
-                    .foregroundColor(.primary)
-                    .multilineTextAlignment(.leading)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                
-                Text(dataModel.rightMsg)
-                    .font(.system(size: 13))
-                    .foregroundColor(.secondary)
-                    .multilineTextAlignment(.trailing)
-                    .frame(maxWidth: .infinity, alignment: .trailing)
-                
-                // 点击指示器
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 14))
-                    .foregroundColor(.gray)
+        VStack(alignment: .leading, spacing: 0) {
+            // Main content
+            Button(action: {
+                onCellTapped?()
+            }) {
+                HStack(alignment: .top, spacing: 10) {
+                    Text(dataModel.leftMsg)
+                        .font(.system(size: 15))
+                        .foregroundColor(.primary)
+                        .multilineTextAlignment(.leading)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    
+                    Text(dataModel.rightMsg)
+                        .font(.system(size: 13))
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.trailing)
+                        .frame(maxWidth: .infinity, alignment: .trailing)
+                    
+                    // 点击指示器
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 14))
+                        .foregroundColor(.gray)
+                }
+                .padding(.horizontal, 15)
+                .padding(.vertical, 10)
+                .frame(maxWidth: .infinity, minHeight: 44)
             }
-            .padding(.horizontal, 15)
-            .padding(.vertical, 10)
-            .frame(maxWidth: .infinity, minHeight: 44)
+            .buttonStyle(PlainButtonStyle())
+            
+            // 固定的底部线条，使用 GeometryReader 确保准确的左右间距
+            GeometryReader { geometry in
+                HStack(spacing: 0) {
+                    Spacer().frame(width: 15)
+                    
+                    Rectangle()
+                        .fill(bottomLineColor)
+                        .frame(height: bottomLineHeight)
+                    
+                    Spacer().frame(width: 15)
+                }
+            }
+            .frame(height: bottomLineHeight)
         }
-        .buttonStyle(PlainButtonStyle())
     }
 }
 
@@ -150,6 +192,7 @@ struct DeviceInfoExampleView: View {
         List {
             ForEach(deviceModels.indices, id: \.self) { index in
                 MKSFUDeviceInfoCell(dataModel: deviceModels[index])
+                    .listRowSeparator(.hidden)
                     .listRowInsets(EdgeInsets())
             }
         }
@@ -171,15 +214,9 @@ struct GroupedDeviceInfoView: View {
                 
                 ForEach(0..<4) { index in
                     MKSFUDeviceInfoCell(dataModel: createBasicInfoModel(for: index))
-                    if index < 3 {
-                        Divider()
-                            .padding(.leading, 15)
-                    }
                 }
             }
             .background(Color(.systemBackground))
-            
-            Divider()
             
             // 状态信息组
             VStack(alignment: .leading, spacing: 0) {
@@ -191,10 +228,6 @@ struct GroupedDeviceInfoView: View {
                 
                 ForEach(0..<3) { index in
                     MKSFUDeviceInfoCell(dataModel: createStatusInfoModel(for: index))
-                    if index < 2 {
-                        Divider()
-                            .padding(.leading, 15)
-                    }
                 }
             }
             .background(Color(.systemBackground))
@@ -245,6 +278,8 @@ struct ClickableDeviceInfoExample: View {
                     print("点击了第 \(index) 个单元格")
                     handleCellTap(at: index)
                 }
+                .listRowSeparator(.hidden)
+                .listRowInsets(EdgeInsets())
             }
         }
         .listStyle(PlainListStyle())
@@ -279,6 +314,8 @@ struct ClickableDeviceInfoExampleWithViewModel: View {
                     print("点击了第 \(index) 个单元格")
                     viewModel.handleCellTap(at: index)
                 }
+                .listRowSeparator(.hidden)
+                .listRowInsets(EdgeInsets())
             }
         }
         .listStyle(PlainListStyle())
@@ -302,6 +339,8 @@ struct SimpleClickableDeviceInfoExample: View {
                 ) {
                     handleCellTap(at: index)
                 }
+                .listRowSeparator(.hidden)
+                .listRowInsets(EdgeInsets())
             }
         }
         .listStyle(PlainListStyle())
@@ -326,27 +365,47 @@ struct SimpleClickableCell: View {
     let rightMsg: String
     let onTap: () -> Void
     
+    // 固定的底部线条样式
+    private let bottomLineColor: Color = Color(red: 238/255, green: 238/255, blue: 238/255)
+    private let bottomLineHeight: CGFloat = 0.5
+    
     var body: some View {
-        Button(action: onTap) {
-            HStack {
-                Text(leftMsg)
-                    .font(.system(size: 15))
-                    .foregroundColor(.primary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                
-                Text(rightMsg)
-                    .font(.system(size: 13))
-                    .foregroundColor(.secondary)
-                
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 14))
-                    .foregroundColor(.gray)
+        VStack(alignment: .leading, spacing: 0) {
+            Button(action: onTap) {
+                HStack {
+                    Text(leftMsg)
+                        .font(.system(size: 15))
+                        .foregroundColor(.primary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    
+                    Text(rightMsg)
+                        .font(.system(size: 13))
+                        .foregroundColor(.secondary)
+                    
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 14))
+                        .foregroundColor(.gray)
+                }
+                .padding(.horizontal, 15)
+                .padding(.vertical, 10)
+                .frame(maxWidth: .infinity, minHeight: 44)
             }
-            .padding(.horizontal, 15)
-            .padding(.vertical, 10)
-            .frame(maxWidth: .infinity, minHeight: 44)
+            .buttonStyle(PlainButtonStyle())
+            
+            // 固定的底部线条，使用 GeometryReader 确保准确的左右间距
+            GeometryReader { geometry in
+                HStack(spacing: 0) {
+                    Spacer().frame(width: 15)
+                    
+                    Rectangle()
+                        .fill(bottomLineColor)
+                        .frame(height: bottomLineHeight)
+                    
+                    Spacer().frame(width: 15)
+                }
+            }
+            .frame(height: bottomLineHeight)
         }
-        .buttonStyle(PlainButtonStyle())
     }
 }
 
@@ -410,8 +469,6 @@ struct MKSFUDeviceInfoCell_Previews: PreviewProvider {
                     )
                 )
                 
-                Divider()
-                
                 MKSFUDeviceInfoCell(
                     dataModel: MKSFUDeviceInfoCellModel(
                         leftMsg: "设备描述",
@@ -419,8 +476,6 @@ struct MKSFUDeviceInfoCell_Previews: PreviewProvider {
                     )
                 )
                 .withBackground(Color.blue.opacity(0.1))
-                
-                Divider()
                 
                 ClickableDeviceInfoCell(
                     dataModel: MKSFUDeviceInfoCellModel(
